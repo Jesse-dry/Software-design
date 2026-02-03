@@ -1,23 +1,20 @@
-# Unity generated
+# ========== Unity generated ==========
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
 [Ll]ogs/
+UserSettings/
 
-# User-specific files
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.svd
-
-# OS generated
-.DS_Store
-Thumbs.db
-
-# Rider / VS
-.idea/
+# ========== IDE ==========
 .vscode/
 .vs/
+.idea/
+*.csproj
+*.sln
+.vsconfig
+
+# ========== OS ==========
+.DS_Store
+Thumbs.db

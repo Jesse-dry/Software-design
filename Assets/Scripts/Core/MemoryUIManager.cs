@@ -21,8 +21,7 @@ public class MemoryUIManager : MonoBehaviour
     public void ShowMemory(MemoryFragmentNode node)
     {
         playerMovement.Freeze();
-
-        memoryText.text = node.memoryText;
+        memoryText.text = node.memoryContent;
         memoryPanel.SetActive(true);
     }
 

@@ -11,11 +11,13 @@ public class InteractionPromptUI : MonoBehaviour
 
     public void Show()
     {
+        if (promptRoot == null) return;
         promptRoot.SetActive(true);
     }
 
     public void Hide()
     {
+        if (promptRoot == null) return;
         promptRoot.SetActive(false);
     }
 }

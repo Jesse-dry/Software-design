@@ -14,9 +14,12 @@ public class PlayerInteractInput : MonoBehaviour
     public void OnInteract(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
+        Debug.Log("Try show UI");
 
         if (interaction.currentNode != null)
         {
+            MemoryUIManager.Instance.ShowMemory(interaction.currentNode as MemoryFragmentNode);
+            
             interaction.currentNode.Interact();
         }
     }

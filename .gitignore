@@ -1,4 +1,3 @@
-# ========== Unity generated ==========
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
@@ -7,14 +6,14 @@
 [Ll]ogs/
 UserSettings/
 
-# ========== IDE ==========
-.vscode/
-.vs/
-.idea/
 *.csproj
+*.unityproj
 *.sln
-.vsconfig
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
 
-# ========== OS ==========
 .DS_Store
-Thumbs.db
+.vs/

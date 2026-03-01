@@ -1,0 +1,64 @@
+{
+  "chapter": "罪徒，代号01",
+
+  "confirmedFacts": [
+    "记忆托管机构主要服务对象为权贵、富豪、政客等，客户可以将自己带有罪证的记忆抽取出来托管在中心的服务器中。客户本体将忘记这段记忆，从而逃避法律的测谎",
+    "该场景某富豪的记忆显示他虐杀少女并通过记忆托管逃避法律责任",
+    "行业有一条共识秩序《绝对静默》：档案员仅作为数据的容器与搬运工。严禁查看、严禁拷贝、严禁对客户记忆产生任何主观解读。数据即是数据，无关善恶。",
+    "01私自窥探富豪记忆并拷贝，决心带记忆逃离公司伸张正义"
+  ],
+
+  "evidence": {
+    "cardDefinitions": [
+      {
+        "name": "星币牌·肮脏的交易",
+        "evidenceDescription": "窃听到保安队长和高管的对话"
+      },
+      {
+        "name": "宝剑牌·掩盖的行为",
+        "evidenceDescription": "一段违规删除记录"
+      },
+      {
+        "name": "圣杯牌·破碎的家庭",
+        "evidenceDescription": "受害者女孩的全家福"
+      },
+      {
+        "name": "权杖牌·受害者的遗物",
+        "evidenceDescription": "小女孩的头绳"
+      }
+    ]
+  },
+
+  "trial": {
+    "topic": "是否维持对"罪徒"的指控（罪徒是否应该被放逐）",
+    "npcs": [
+      {
+        "name": "皇帝",
+        "roleSetting": "管理层代表，极度理性，强调规则与秩序",
+        "initialStance": "支持定罪",
+        "reasonThreshold": 80,
+        "emotionThreshold": 20,
+        "initialReasonLevel": 90,
+        "initialEmotionLevel": 10
+      },
+      {
+        "name": "正义",
+        "roleSetting": "法务代表，理性与情感平衡，关注程序正义",
+        "initialStance": "支持定罪",
+        "reasonThreshold": 60,
+        "emotionThreshold": 40,
+        "initialReasonLevel": 70,
+        "initialEmotionLevel": 30
+      },
+      {
+        "name": "恋人",
+        "roleSetting": "底层员工，极度感性，容易被真相打动",
+        "initialStance": "动摇中",
+        "reasonThreshold": 30,
+        "emotionThreshold": 70,
+        "initialReasonLevel": 40,
+        "initialEmotionLevel": 60
+      }
+    ]
+  }
+}

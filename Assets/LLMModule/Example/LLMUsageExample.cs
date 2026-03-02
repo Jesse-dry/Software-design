@@ -73,7 +73,7 @@ public class LLMUsageExample : MonoBehaviour
                 "01私自窥探富豪记忆并拷贝，决心带记忆逃离公司伸张正义",
                 "本庭审议题：是否判决01有罪"
             },
-            topic = "是否维持对"罪徒"的指控（罪徒是否应该被放逐）",
+            topic = "是否维持对\"罪徒\"的指控（罪徒是否应该被放逐）",
             allNPCs = new[]
             {
                 new NPCTrialInfo
@@ -145,7 +145,7 @@ public class LLMUsageExample : MonoBehaviour
                 "行业有一条共识秩序《绝对静默》",
                 "01私自窥探富豪记忆并拷贝，决心带记忆逃离公司伸张正义"
             },
-            topic = "是否维持对"罪徒"的指控",
+            topic = "是否维持对\"罪徒\"的指控",
             cardName = "星币牌·肮脏的交易",
             cardText = "（此处为之前生成的牌面文本）",
             argument = "这份契约的标的物本身就是违法的。组织收受了封口费，这不再是商业契约，而是共谋犯罪。"

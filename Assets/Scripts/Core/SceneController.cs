@@ -7,15 +7,30 @@ public class SceneController : MonoBehaviour
     public static SceneController Instance { get; private set; }
 
     [Header("Scene Names")]
-    [SerializeField] private string bootScene = "Boot";
+    [SerializeField] private string bootScene  = "Boot";
     [SerializeField] private string abyssScene = "Abyss";
     [SerializeField] private string courtScene = "Court";
 
     private bool isLoading = false;
 
+    // =========================
+    // é…ç½®æ³¨å…¥ï¼ˆç”± GameBootstrapper è°ƒç”¨ï¼‰
+    // =========================
+
+    /// <summary>
+    /// ç”± GameBootstrapper åœ¨ Start() ä¹‹å‰æ³¨å…¥åœºæ™¯åé…ç½®ï¼Œ
+    /// ä¼˜å…ˆçº§é«˜äº Inspector é‡Œçš„ SerializeField é»˜è®¤å€¼ã€‚
+    /// </summary>
+    public void InjectConfig(string boot, string abyss, string court)
+    {
+        if (!string.IsNullOrEmpty(boot))  bootScene  = boot;
+        if (!string.IsNullOrEmpty(abyss)) abyssScene = abyss;
+        if (!string.IsNullOrEmpty(court)) courtScene = court;
+    }
+
     private void Awake()
     {
-        // µ¥Àı
+        // ï¿½ï¿½ï¿½ï¿½
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -27,7 +42,7 @@ public class SceneController : MonoBehaviour
     }
 
     // =========================
-    // ¶ÔÍâ½Ó¿Ú£¨Ö»ÄÜ×ßÕâÀï£©
+    // ï¿½ï¿½ï¿½ï¿½Ó¿Ú£ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï£©
     // =========================
 
     public void LoadBoot()
@@ -46,7 +61,7 @@ public class SceneController : MonoBehaviour
     }
 
     // =========================
-    // ºËĞÄ¼ÓÔØÂß¼­
+    // ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ß¼ï¿½
     // =========================
 
     private void LoadScene(string sceneName)
@@ -66,16 +81,16 @@ public class SceneController : MonoBehaviour
 
         Debug.Log($"[SceneController] Loading Scene: {sceneName}");
 
-        // ÕâÀï½«À´¿ÉÒÔ½Ó£º
-        // - µ­³ö¶¯»­
+        // ï¿½ï¿½ï¿½ï½«ï¿½ï¿½ï¿½ï¿½ï¿½Ô½Ó£ï¿½
+        // - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         // - Loading UI
-        // - ÒôÀÖ¹ı¶É
+        // - ï¿½ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½
 
         AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
 
         while (!operation.isDone)
         {
-            // ÒÔºó¿ÉÒÔ°Ñ½ø¶È´«¸ø UI
+            // ï¿½Ôºï¿½ï¿½ï¿½Ô°Ñ½ï¿½ï¿½È´ï¿½ï¿½ï¿½ UI
             yield return null;
         }
 

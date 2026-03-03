@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 304e8a1c737da2a4e8cfbf1018986fac, type: 3}
+  m_Name: GameBootConfig
+  m_EditorClassIdentifier: Assembly-CSharp::GameBootConfig
+  bootScene: Boot
+  mainMenuScene: MainMenu
+  cutsceneScene: CutsceneScene
+  memoryScene: Memory
+  abyssScene: Abyss
+  courtScene: Court
+  startPhase: 0
+  verboseLog: 1

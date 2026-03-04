@@ -54,12 +54,22 @@
     <Compile Include="Assets\Scripts\接水管\LevelJudge.cs" />
     <Compile Include="Assets\Scripts\Animations\playercontroller.cs" />
     <Compile Include="Assets\Scripts\Gameplay\MemoryFragmentNode.cs" />
+    <Compile Include="Assets\LLMModule\Example\TrialUIExample.cs" />
+    <Compile Include="Assets\Scripts\Animations\CameraBlink.cs" />
     <Compile Include="Assets\Scripts\Core\GamePhase.cs" />
+    <Compile Include="Assets\LLMModule\DTOs.cs" />
     <Compile Include="Assets\Scripts\Animations\PlayerHide.cs" />
+    <Compile Include="Assets\LLMModule\LLMService.cs" />
+    <Compile Include="Assets\LLMModule\Data\ChapterConfigLoader.cs" />
     <Compile Include="Assets\Scripts\Gameplay\AbyssPortal.cs" />
+    <Compile Include="Assets\LLMModule\Example\LLMUsageExample.cs" />
+    <Compile Include="Assets\LLMModule\ILLMTextGenerator.cs" />
     <Compile Include="Assets\Scripts\UI\InteractionPromptUI.cs" />
     <Compile Include="Assets\Scripts\Animations\guardmoving.cs" />
+    <Compile Include="Assets\LLMModule\LLMTextGenerator.cs" />
+    <Compile Include="Assets\Scripts\几个场景的过渡\DoorTransition.cs" />
     <Compile Include="Assets\Scripts\Gameplay\PlayerInteractInput.cs" />
+    <Compile Include="Assets\LLMModule\Data\ChapterConfig.cs" />
     <Compile Include="Assets\Scripts\Core\DataManager.cs" />
     <Compile Include="Assets\Scripts\接水管\PipeLogic.cs" />
     <Compile Include="Assets\Scripts\Animations\SceneLoader.cs" />
@@ -71,12 +81,17 @@
     <Compile Include="Assets\Scripts\Animations\CutsceneController.cs" />
     <Compile Include="Assets\Scripts\Gameplay\PlayerMovement.cs" />
     <Compile Include="Assets\Scripts\Core\MemoryNodeBase.cs" />
+    <Compile Include="Assets\LLMModule\ResponseParser.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CourtState.cs" />
+    <Compile Include="Assets\LLMModule\LLMConfig.cs" />
+    <Compile Include="Assets\LLMModule\PromptBuilder.cs" />
     <Compile Include="Assets\Scripts\Animations\AsyncSceneLoader.cs" />
     <Compile Include="Assets\Scripts\UI\FloatEffect.cs" />
+    <Compile Include="Assets\LLMModule\LLMApiClient.cs" />
     <Compile Include="Assets\Scripts\UI\ConsensusTitleEffect.cs" />
     <Compile Include="Assets\Video\VideoCutsceneController.cs" />
     <Compile Include="Assets\Scripts\Core\GameManager.cs" />
+    <Compile Include="Assets\Scripts\Animations\LightDetection.cs" />
     <Compile Include="Assets\Scripts\Data\CourtTopic.cs" />
     <Compile Include="Assets\Scripts\CameraFollow.cs" />
     <Compile Include="Assets\Scripts\Data\EvidenceType.cs" />
@@ -661,6 +676,10 @@
       <HintPath>Library\PackageCache\com.unity.visualscripting@191c0d7e3b69\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json@eebc3d041427\Runtime\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff\Mono.Cecil.dll</HintPath>
       <Private>False</Private>
@@ -1202,9 +1221,11 @@
     <ProjectReference Include="Unity.VisualScripting.Flow.Editor.csproj" />
     <ProjectReference Include="Unity.2D.IK.Editor.csproj" />
     <ProjectReference Include="Unity.2D.SpriteShape.Runtime.csproj" />
+    <ProjectReference Include="UniTask.TextMeshPro.csproj" />
     <ProjectReference Include="Unity.VisualStudio.Editor.csproj" />
     <ProjectReference Include="Unity.RenderPipelines.Core.Runtime.csproj" />
     <ProjectReference Include="Unity.2D.Tilemap.Editor.csproj" />
+    <ProjectReference Include="UniTask.DOTween.csproj" />
     <ProjectReference Include="Unity.2D.Common.Runtime.csproj" />
     <ProjectReference Include="Unity.Collections.csproj" />
     <ProjectReference Include="Unity.InputSystem.ForUI.csproj" />
@@ -1222,14 +1243,17 @@
     <ProjectReference Include="Unity.RenderPipelines.Universal.Runtime.csproj" />
     <ProjectReference Include="Unity.VisualScripting.State.csproj" />
     <ProjectReference Include="Unity.RenderPipelines.Universal.Config.Runtime.csproj" />
+    <ProjectReference Include="UniTask.Linq.csproj" />
     <ProjectReference Include="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
     <ProjectReference Include="Unity.Collections.Editor.csproj" />
+    <ProjectReference Include="UniTask.Addressables.csproj" />
     <ProjectReference Include="Unity.ShaderGraph.Editor.csproj" />
     <ProjectReference Include="Unity.2D.Sprite.AIIntegration.Editor.csproj" />
     <ProjectReference Include="Unity.RenderPipelines.Core.Editor.Shared.csproj" />
     <ProjectReference Include="Unity.2D.SpriteShape.Editor.csproj" />
     <ProjectReference Include="Unity.InputSystem.csproj" />
     <ProjectReference Include="UnityEditor.UI.csproj" />
+    <ProjectReference Include="UniTask.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>

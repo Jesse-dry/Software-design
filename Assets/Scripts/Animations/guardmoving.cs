@@ -41,18 +41,26 @@ public class guardmoving : MonoBehaviour
     }
 
     // 翻转人物朝向
+// 翻转人物朝向（连带手电筒一起）
     void Flip()
     {
-        // 方式 A：直接翻转 SpriteRenderer 的镜像（简单推荐）
-        if (spriteRenderer != null)
+        Vector3 scaler = transform.localScale;
+        
+        // 1. 记住你原本设置的真实大小（比如你放大了 3 倍，就记住 3），防止变形
+        float originalSize = Mathf.Abs(scaler.x);
+        
+        // 2. 结合你朝左的原图来翻转
+        if (movingRight)
         {
-            spriteRenderer.flipX = movingRight;
+            // 向右走时：需要镜像翻转（变成负数），让手电筒和人一起朝右
+            scaler.x = -originalSize; 
+        }
+        else
+        {
+            // 向左走时：保持原图状态（变成正数），让手电筒和人一起朝左
+            scaler.x = originalSize;
         }
         
-        /* 方式 B：如果你有子物体，建议翻转 Scale
-        Vector3 scaler = transform.localScale;
-        scaler.x *= -1;
         transform.localScale = scaler;
-        */
     }
 }

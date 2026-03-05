@@ -7,7 +7,7 @@ public class PlayerHide : MonoBehaviour
     public int hideLayer = -1;   // 躲藏时的层级（必须比花瓶小，比如 -1）
 
     private bool isNearVase = false; // 是否在花瓶旁边
-    private bool isHiding = false;   // 当前是否正在躲藏
+    public bool isHiding = false;   // 当前是否正在躲藏
     private Transform vaseTransform; // 记录当前碰到的是哪个花瓶
 
     private SpriteRenderer spriteRenderer;

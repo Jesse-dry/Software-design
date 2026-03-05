@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 游戏自动初始化启动器。
@@ -48,6 +50,21 @@ public static class GameBootstrapper
         // DataManager：数据管理（证据、话题等）
         CreateManager<DataManager>(root, "DataManager");
         
+        // UIManager：UI 统一管理（跨场景持久）
+        CreateManager<UIManager>(root, "UIManager", ui =>
+        {
+            // 添加子系统组件
+            ui.Transition   = ui.gameObject.AddComponent<TransitionSystem>();
+            ui.Modal        = ui.gameObject.AddComponent<ModalSystem>();
+            ui.Toast        = ui.gameObject.AddComponent<ToastSystem>();
+            ui.HUD          = ui.gameObject.AddComponent<HUDSystem>();
+            ui.Dialogue     = ui.gameObject.AddComponent<DialoguePlayer>();
+            ui.ItemDisplay  = ui.gameObject.AddComponent<ItemDisplaySystem>();
+
+            // 加载 UIRoot（Canvas 层级结构）
+            ui.InitializeUIRoot();
+        });
+
         // SceneController：场景切换控制
         CreateManager<SceneController>(root, "SceneController", sc =>
         {
@@ -67,8 +84,53 @@ public static class GameBootstrapper
             gm.InjectConfig(config.startPhase);
         });
 
+        // ── 4. 确保 EventSystem 存在（UI 按钮点击必需）──────────
+        if (Object.FindFirstObjectByType<EventSystem>() == null)
+        {
+            var esGO = new GameObject("EventSystem");
+            esGO.transform.SetParent(root.transform, false);
+            esGO.AddComponent<EventSystem>();
+
+            // 优先使用 InputSystem 的 UI Input Module
+            var moduleType = System.Type.GetType(
+                "UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
+            if (moduleType != null)
+                esGO.AddComponent(moduleType);
+            else
+                esGO.AddComponent<StandaloneInputModule>();
+
+            Log(config, "[Bootstrapper] 创建 EventSystem。");
+        }
+
+        // ── 5. 注册场景加载回调，自动清理重复 EventSystem ────────
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+
         Log(config, "[Bootstrapper] 所有 Manager 初始化完成。");
         Log(config, $"[Bootstrapper] 起始阶段: {config.startPhase}");
+    }
+
+    // ── 场景加载回调 ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// 场景加载后清理重复 EventSystem。
+    /// Bootstrapper 创建的 EventSystem 位于 [MANAGERS] 下并标记 DontDestroyOnLoad，
+    /// 新加载的场景中若自带 EventSystem 会造成冲突，此回调自动销毁多余的实例。
+    /// </summary>
+    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        var allES = Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None);
+        if (allES.Length <= 1) return;
+
+        foreach (var es in allES)
+        {
+            // 保留 [MANAGERS] 下的持久化 EventSystem，销毁其余
+            if (es.transform.root.name != ROOT_NAME)
+            {
+                Debug.Log($"[Bootstrapper] 销毁场景 '{scene.name}' 中重复的 EventSystem: {es.gameObject.name}");
+                Object.Destroy(es.gameObject);
+            }
+        }
     }
 
     // ── 辅助方法 ─────────────────────────────────────────────────────

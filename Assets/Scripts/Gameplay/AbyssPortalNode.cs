@@ -1,22 +1,52 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
-/// 潜渊门节点（挂在 AbyssPortal 同一 GameObject 上）。
-/// 继承 MemoryNodeBase 以复用 PlayerInteraction 的 Trigger 检测 + 按 E 交互机制。
-/// Interact() 时委托给 AbyssPortal.TryEnterAbyss()。
+/// 潜渊门交互节点。
+/// 继承 MemoryNodeBase，通过 PlayerInteraction 统一检测 + 按 E 交互。
+///
+/// 碎片集齐时提示 "按 E 进入深渊"，否则提示 "碎片不足(x/n)"。
+/// 按 E 后由 AbyssPortal.TryEnterAbyss() 接管流程。
 /// </summary>
 [RequireComponent(typeof(AbyssPortal))]
 public class AbyssPortalNode : MemoryNodeBase
 {
-    private AbyssPortal portal;
+    [Tooltip("提示文字偏移（相对自身 transform.position）")]
+    public Vector3 promptOffset = new Vector3(0, 1.5f, 0);
+
+    private AbyssPortal _portal;
 
     private void Awake()
     {
-        portal = GetComponent<AbyssPortal>();
+        _portal = GetComponent<AbyssPortal>();
     }
 
     public override void Interact()
     {
-        portal?.TryEnterAbyss();
+        HidePrompt();
+        _portal?.TryEnterAbyss();
+    }
+
+    public override void OnPlayerEnter(GameObject player)
+    {
+        if (_portal == null) return;
+
+        string text = _portal.CurrentFragments >= _portal.RequiredFragments
+            ? "按 E 进入深渊"
+            : $"碎片不足 ({_portal.CurrentFragments}/{_portal.RequiredFragments})";
+
+        // 提示位置：必须在相机视野内（相机固定在原点，门在 Y=19 远超视野）
+        var cam = Camera.main;
+        Vector3 pos;
+        if (cam != null)
+            pos = new Vector3(0f, cam.transform.position.y + cam.orthographicSize * 0.4f, 0f);
+        else
+            pos = transform.position + promptOffset;
+
+        ShowPrompt(text, pos);
+    }
+
+    public override void OnPlayerExit(GameObject player)
+    {
+        HidePrompt();
     }
 }

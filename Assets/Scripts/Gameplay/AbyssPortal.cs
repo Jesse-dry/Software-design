@@ -1,115 +1,137 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 潜渊传送门（Memory 场景终点）。
-/// 
-/// 收集全部碎片后，玩家靠近门 → 世界坐标飘字 → 确认弹窗 → 过渡动画 → 加载 Abyss 场景。
-/// 碎片不足时显示 Toast 提示。
+///
+/// 【职责】
+///   - 碎片收集计数
+///   - 确认弹窗 → 场景切换
+///
+/// 【设计原则】
+///   - 无 Update()，不做键盘轮询
+///   - 确认弹窗的键盘操作由 ModalSystem 内部处理（Enter/Space 确认，Esc 取消）
+///   - 场景跳转走 GameManager → SceneController → SceneManager 三级 fallback
 /// </summary>
 public class AbyssPortal : MonoBehaviour
 {
     public static AbyssPortal Instance;
 
     [Header("过关条件")]
-    [Tooltip("需要收集的碎片总数")]
     public int requiredFragments = 4;
     private int currentFragments = 0;
 
-    [Header("提示")]
-    [Tooltip("世界坐标提示偏移")]
-    public Vector3 promptOffset = new Vector3(0, 1.5f, 0);
+    private bool _transitioning;
+    private PlayerMovement _frozenPlayer;
+    private PlayerInteraction _playerInteraction;
 
-    private bool isTransitioning = false;
-    private bool playerInRange = false;
-
-    /// <summary>当前已收集碎片数（供 MemoryFragmentNode 读取）</summary>
     public int CurrentFragments => currentFragments;
-
-    /// <summary>需要的碎片总数（供 MemoryFragmentNode 读取）</summary>
     public int RequiredFragments => requiredFragments;
 
-    private void Awake()
-    {
-        Instance = this;
-    }
+    private void Awake() { Instance = this; }
 
-    /// <summary>碎片被收集时调用</summary>
+    // ══════════════════════════════════════════════════════════════
+    //  碎片收集
+    // ══════════════════════════════════════════════════════════════
+
     public void CollectFragment()
     {
         currentFragments++;
         Debug.Log($"[AbyssPortal] 碎片进度: {currentFragments}/{requiredFragments}");
-
         if (currentFragments >= requiredFragments)
-        {
             Debug.Log("[AbyssPortal] 全部碎片已收集，传送门已激活！");
-        }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (!other.CompareTag("Player") || isTransitioning) return;
+    // ══════════════════════════════════════════════════════════════
+    //  尝试进入深渊（由 AbyssPortalNode.Interact 调用）
+    // ══════════════════════════════════════════════════════════════
 
-        playerInRange = true;
-
-        if (currentFragments >= requiredFragments)
-        {
-            // 碎片已集齐 → 飘字 + 确认弹窗
-            UIManager.Instance?.Toast.ShowAtWorld(
-                transform.position + promptOffset,
-                "按 E 进入");
-        }
-        else
-        {
-            // 碎片不足 → Toast 提示
-            UIManager.Instance?.Toast.Show(
-                $"记忆碎片不足（{currentFragments}/{requiredFragments}），继续探索吧。");
-        }
-    }
-
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        if (!other.CompareTag("Player")) return;
-        playerInRange = false;
-    }
-
-    /// <summary>
-    /// 供 PlayerInteraction 调用（当本对象也挂 MemoryNodeBase 或单独处理时）。
-    /// 也可以由专门的 AbyssPortalNode 触发。
-    /// </summary>
     public void TryEnterAbyss()
     {
-        if (isTransitioning) return;
+        if (_transitioning) return;
 
         if (currentFragments < requiredFragments)
         {
-            UIManager.Instance?.Toast.Show(
+            UIManager.Instance?.Toast?.Show(
                 $"记忆碎片不足（{currentFragments}/{requiredFragments}），继续探索吧。");
             return;
         }
 
-        isTransitioning = true;
+        _transitioning = true;
 
-        // 冻结玩家
-        var player = FindAnyObjectByType<PlayerMovement>();
-        player?.Freeze();
+        // 冻结玩家 + 锁定交互
+        _frozenPlayer = FindAnyObjectByType<PlayerMovement>();
+        _playerInteraction = FindAnyObjectByType<PlayerInteraction>();
+        _frozenPlayer?.Freeze();
+        _playerInteraction?.EnterInteracting();
 
-        // 弹出确认弹窗
-        UIManager.Instance?.Modal.ShowConfirm(
-            "潜入深渊，探寻真相？",
-            onYes: () =>
-            {
-                // 确认 → 过渡动画 → 切换场景
-                UIManager.Instance?.Transition.FadeIn(1.5f, () =>
-                {
-                    GameManager.Instance?.EnterPhase(GamePhase.Abyss);
-                });
-            },
-            onNo: () =>
-            {
-                // 取消 → 解冻玩家
-                isTransitioning = false;
-                player?.Unfreeze();
-            }
-        );
+        // 打开确认弹窗
+        var modal = UIManager.Instance?.Modal;
+        if (modal != null)
+        {
+            modal.ShowConfirm("潜入深渊，探寻真相？",
+                onYes: OnConfirm,
+                onNo:  OnCancel);
+        }
+        else
+        {
+            Debug.LogWarning("[AbyssPortal] ModalSystem 不可用，直接进入深渊。");
+            OnConfirm();
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  确认 / 取消回调
+    // ══════════════════════════════════════════════════════════════
+
+    private void OnConfirm()
+    {
+        // 有转场系统 → CrossFade（淡入黑 → 加载场景 → 淡出显示新场景）
+        // 旧代码只调用 FadeIn 不调用 FadeOut，导致加载后画面永远停留在黑屏。
+        var transition = UIManager.Instance?.Transition;
+        if (transition != null)
+        {
+            transition.CrossFade(
+                fadeInDur: 1.5f,
+                midAction: () => LoadAbyss(),
+                fadeOutDur: 1.5f,
+                onComplete: null);
+        }
+        else
+        {
+            LoadAbyss();
+        }
+    }
+
+    private void OnCancel()
+    {
+        _transitioning = false;
+        _frozenPlayer?.Unfreeze();
+        _playerInteraction?.ReturnToFree();
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  场景加载（三级 fallback）
+    // ══════════════════════════════════════════════════════════════
+
+    private void LoadAbyss()
+    {
+        // 解冻（新场景会创建新 Player，这里防止切换失败时卡死）
+        _frozenPlayer?.Unfreeze();
+        _playerInteraction?.ReturnToFree();
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.EnterPhase(GamePhase.Abyss);
+        }
+        else if (SceneController.Instance != null)
+        {
+            Debug.LogWarning("[AbyssPortal] GameManager 为 null，由 SceneController 直接加载。");
+            SceneController.Instance.LoadAbyss();
+        }
+        else
+        {
+            Debug.LogError("[AbyssPortal] GameManager、SceneController 均为 null！直接 LoadScene。");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Abyss");
+        }
     }
 }

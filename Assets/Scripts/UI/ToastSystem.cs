@@ -3,7 +3,6 @@ using UnityEngine.UI;
 using DG.Tweening;
 using TMPro;
 using System.Collections.Generic;
-using System.Linq;
 
 /// <summary>
 /// 浮动提示系统（非打断式 Toast / Floating Text）。
@@ -81,12 +80,12 @@ public class ToastSystem : MonoBehaviour
 
     public void Initialize()
     {
-        var hudLayer = UIManager.Instance?.hudLayer;
-        if (hudLayer == null) return;
+        var layer = UIManager.Instance?.toastLayer;
+        if (layer == null) return;
 
-        // 创建 Toast 容器
+        // 创建 Toast 容器（在全局 ToastLayer 下，跨场景持久）
         var containerGO = new GameObject("ToastContainer");
-        containerGO.transform.SetParent(hudLayer, false);
+        containerGO.transform.SetParent(layer, false);
         container = containerGO.AddComponent<RectTransform>();
         container.anchorMin = new Vector2(0.5f, 0f);
         container.anchorMax = new Vector2(0.5f, 0f);
@@ -155,16 +154,16 @@ public class ToastSystem : MonoBehaviour
         Vector2 screenPos = cam.WorldToScreenPoint(worldPos);
 
         // 创建临时 Toast 固定在屏幕位置
-        var hudLayer = UIManager.Instance?.hudLayer;
-        if (hudLayer == null) return;
+        var layer = UIManager.Instance?.toastLayer;
+        if (layer == null) return;
 
         var toast = CreateToastElement(message, colorType);
-        toast.transform.SetParent(hudLayer, false);
+        toast.transform.SetParent(layer, false);
         var rect = toast.GetComponent<RectTransform>();
 
         // 转换为 Canvas 坐标
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            hudLayer, screenPos, null, out Vector2 localPos);
+            layer, screenPos, null, out Vector2 localPos);
         rect.anchoredPosition = localPos;
 
         // 简单上浮 + 淡出
@@ -318,37 +317,9 @@ public class ToastSystem : MonoBehaviour
 
     // ── 中文字体支持 ─────────────────────────────────────────────
 
-    private static TMP_FontAsset _chineseTmpFont;
-
     private static void ApplyChineseFont(TMP_Text tmp)
     {
-        var font = GetChineseTmpFont();
-        if (font != null) tmp.font = font;
-    }
-
-    private static TMP_FontAsset GetChineseTmpFont()
-    {
-        if (_chineseTmpFont != null) return _chineseTmpFont;
-
-        string[] candidates =
-        {
-            "Microsoft YaHei", "微软雅黑", "SimHei", "黑体",
-            "PingFang SC", "Hiragino Sans GB",
-            "Noto Sans CJK SC", "Source Han Sans SC",
-            "Arial Unicode MS", "Arial"
-        };
-
-        var installed = new HashSet<string>(Font.GetOSInstalledFontNames(),
-                                            System.StringComparer.OrdinalIgnoreCase);
-        string chosen = candidates.FirstOrDefault(c => installed.Contains(c)) ?? "Arial";
-
-        var osFont = Font.CreateDynamicFontFromOSFont(chosen, 32);
-        _chineseTmpFont = TMP_FontAsset.CreateFontAsset(osFont);
-
-        if (_chineseTmpFont != null)
-            _chineseTmpFont.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-
-        return _chineseTmpFont;
+        ChineseFontProvider.ApplyFont(tmp);
     }
 }
 

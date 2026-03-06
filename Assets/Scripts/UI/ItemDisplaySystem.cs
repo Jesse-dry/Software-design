@@ -79,6 +79,18 @@ public class ItemDisplaySystem : MonoBehaviour
 
     public void Initialize()
     {
+        // 清理旧状态（场景切换时，保留 collectedItems 跨场景持久）
+        slotMap.Clear();
+        isOpen = false;
+        SelectedItem = null;
+        panelInstance = null;
+        panelCG = null;
+        panelRect = null;
+        itemGrid = null;
+        detailIcon = null;
+        detailTitle = null;
+        detailDesc = null;
+
         var overlayLayer = UIManager.Instance?.overlayLayer;
         if (overlayLayer == null) return;
 
@@ -437,6 +449,7 @@ public class ItemDisplaySystem : MonoBehaviour
         tmp.color = new Color(0.8f, 0.8f, 0.85f);
         tmp.alignment = align;
         tmp.overflowMode = TextOverflowModes.Ellipsis;
+        ChineseFontProvider.ApplyFont(tmp);
     }
 }
 

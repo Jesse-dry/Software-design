@@ -40,31 +40,16 @@ public abstract class MemoryNodeBase : MonoBehaviour
     private GameObject _promptGO;
     private TextMesh _promptTextMesh;
 
-    // 缓存系统中文字体（全局共享）
+    // 缓存中文字体（使用 ChineseFontProvider 统一管理）
     private static Font _cachedFont;
 
     /// <summary>
-    /// 获取支持中文的 OS 动态字体。
-    /// 按优先级尝试：微软雅黑 → 黑体 → Arial Unicode MS → Arial。
+    /// 获取支持中文的字体（委托 ChineseFontProvider 统一管理）。
     /// </summary>
     private static Font GetChineseFont()
     {
         if (_cachedFont != null) return _cachedFont;
-
-        string[] candidates = {
-            "Microsoft YaHei",  // Windows 常用中文
-            "SimHei",           // Windows 黑体
-            "PingFang SC",      // macOS/iOS
-            "Noto Sans CJK SC", // Linux / Android
-            "Arial Unicode MS", // 通用 Unicode
-            "Arial"             // 最终兜底
-        };
-
-        _cachedFont = Font.CreateDynamicFontFromOSFont(candidates, 64);
-
-        if (_cachedFont == null)
-            _cachedFont = Font.CreateDynamicFontFromOSFont("Arial", 64);
-
+        _cachedFont = ChineseFontProvider.GetLegacyFont();
         return _cachedFont;
     }
 

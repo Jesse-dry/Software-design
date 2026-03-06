@@ -84,6 +84,18 @@ public class DialoguePlayer : MonoBehaviour
 
     public void Initialize()
     {
+        // 清理旧状态（场景切换时，旧面板已随场景销毁）
+        isActive = false;
+        currentSequence = null;
+        currentIndex = 0;
+        panelInstance = null;
+        panelCG = null;
+        speakerNameText = null;
+        dialogueText = null;
+        portraitImage = null;
+        advanceButton = null;
+        textEffectPlayer = null;
+
         var modalLayer = UIManager.Instance?.modalLayer;
         if (modalLayer == null) return;
 
@@ -328,6 +340,7 @@ public class DialoguePlayer : MonoBehaviour
         nameTMP.color = speakerColor;
         nameTMP.fontStyle = FontStyles.Bold;
         nameTMP.alignment = TextAlignmentOptions.BottomLeft;
+        ChineseFontProvider.ApplyFont(nameTMP);
 
         // DialogueText
         var textGO = new GameObject("DialogueText");
@@ -341,6 +354,7 @@ public class DialoguePlayer : MonoBehaviour
         textTMP.fontSize = 20;
         textTMP.color = dialogueColor;
         textTMP.alignment = TextAlignmentOptions.TopLeft;
+        ChineseFontProvider.ApplyFont(textTMP);
 
         // AdvanceButton（右下角三角提示）
         var advGO = new GameObject("AdvanceButton");

@@ -109,10 +109,18 @@ public class MemoryFragmentNode : MemoryNodeBase
         // ② 更新碎片计数
         AbyssPortal.Instance?.CollectFragment();
 
-        // ③ Toast 反馈
+        // ③ 更新 MemoryHUD + Toast 反馈
         var portal = AbyssPortal.Instance;
         int cur = portal?.CurrentFragments ?? 0;
         int req = portal?.RequiredFragments ?? 4;
+
+        // 更新 Prefab 中的碎片计数 HUD
+        if (MemoryHUD.Instance != null)
+        {
+            MemoryHUD.Instance.UpdateCount(cur, req);
+            MemoryHUD.Instance.PlayCollectPulse();
+        }
+
         UIManager.Instance?.Toast?.Show($"拾取了记忆碎片（{cur}/{req}）");
 
         // ④ 清理 + 销毁

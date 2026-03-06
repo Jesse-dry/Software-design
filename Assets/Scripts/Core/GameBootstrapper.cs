@@ -61,8 +61,8 @@ public static class GameBootstrapper
             ui.Dialogue     = ui.gameObject.AddComponent<DialoguePlayer>();
             ui.ItemDisplay  = ui.gameObject.AddComponent<ItemDisplaySystem>();
 
-            // 加载 UIRoot（Canvas 层级结构）
-            ui.InitializeUIRoot();
+            // 创建全局 Canvas（Transition + Toast），场景子系统由 UISceneRoot 注册时初始化
+            ui.InitializeGlobalUI();
         });
 
         // SceneController：场景切换控制

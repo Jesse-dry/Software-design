@@ -102,6 +102,9 @@ public class MemorySceneSetup : MonoBehaviour
 
         EnsureEventSystem();
 
+        // 初始化 MemoryHUD（从 UISceneRoot Prefab 中查找）
+        InitializeMemoryHUD();
+
         // ─── 1. 创建 Player ────────────────────────────────────
         var playerGO = new GameObject("Player");
         playerGO.tag = "Player";
@@ -247,6 +250,13 @@ public class MemorySceneSetup : MonoBehaviour
             cam.transform.position = new Vector3(0f, 0f, -10f);
         }
 
+        // 更新 MemoryHUD 碎片初始计数
+        if (MemoryHUD.Instance != null)
+        {
+            int totalFragments = 4;
+            MemoryHUD.Instance.UpdateCount(collectedCount, totalFragments);
+        }
+
         Debug.Log("[MemorySceneSetup] 场景初始化完成 — Player/Background/Fragments/Portal 已创建。");
     }
 
@@ -309,12 +319,10 @@ public class MemorySceneSetup : MonoBehaviour
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  UI 层级修复
-    //  UIRoot Prefab（Resources/Prefabs/UIroot）若为空壳（仅 Transform，
-    //  无 Canvas、无 HUDLayer / ModalLayer 等子对象），UIManager 的
-    //  BindLayersFromRoot() 会使所有层引用为 null，导致 ModalSystem、
-    //  ToastSystem、TransitionSystem 全部静默失败。
-    //  此方法在场景初始化前检测并重建完整的运行时 UI 层级。
+    //  UI 场景根检查
+    //  新架构下每个场景应放置挂有 UISceneRoot 的 Canvas Prefab，
+    //  UISceneRoot.Awake() 会自动向 UIManager 注册场景层引用。
+    //  此方法仅做安全检查，不再运行时重建 UI 层级。
     // ═══════════════════════════════════════════════════════════════
 
     private void EnsureUILayers()
@@ -322,88 +330,46 @@ public class MemorySceneSetup : MonoBehaviour
         var ui = UIManager.Instance;
         if (ui == null)
         {
-            Debug.LogError("[MemorySceneSetup] UIManager.Instance 为 null，跳过 UI 层级检查。");
+            Debug.LogError("[MemorySceneSetup] UIManager.Instance 为 null，跳过 UI 检查。");
             return;
         }
 
-        // 如果关键层已存在，无需重建
-        if (ui.modalLayer != null && ui.hudLayer != null
-            && ui.overlayLayer != null && ui.transitionLayer != null)
+        if (!ui.HasSceneRoot)
         {
-            Debug.Log("[MemorySceneSetup] UI 层级检查通过。");
-            return;
+            Debug.LogWarning(
+                "[MemorySceneSetup] 未检测到 UISceneRoot。\n" +
+                "请在场景中放置挂有 UISceneRoot 的 Canvas Prefab（如 UIRoot_Memory）。\n" +
+                "场景子系统（HUD / Modal / Dialogue / ItemDisplay）将无法正常工作。");
         }
-
-        Debug.LogWarning(
-            "[MemorySceneSetup] UIManager 层级缺失（UIRoot Prefab 可能为空壳），开始重建运行时 UI 结构……");
-
-        // 移除有问题的 UIRoot
-        var oldRoot = ui.transform.Find("UIRoot");
-        if (oldRoot != null)
-            Destroy(oldRoot.gameObject);
-
-        // ── 创建完整的 Canvas 层级结构 ──────────────────────────
-        var canvasGO = new GameObject("UIRoot");
-        canvasGO.transform.SetParent(ui.transform, false);
-
-        var canvas = canvasGO.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 0;
-
-        var scaler = canvasGO.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 0.5f;
-        canvasGO.AddComponent<GraphicRaycaster>();
-
-        // 按渲染顺序从低到高创建层
-        ui.hudLayer        = CreateUILayer(canvasGO.transform, "HUDLayer", 10);
-        ui.overlayLayer    = CreateUILayer(canvasGO.transform, "OverlayLayer", 50);
-        ui.modalLayer      = CreateUILayer(canvasGO.transform, "ModalLayer", 90);
-        ui.transitionLayer = CreateUILayer(canvasGO.transform, "TransitionLayer", 100);
-
-        // 模态背景（全屏半透明黑遮罩，阻断输入）
-        var bgGO = new GameObject("ModalBackground");
-        bgGO.transform.SetParent(ui.modalLayer, false);
-        bgGO.transform.SetAsFirstSibling();
-        ui.modalBackground = bgGO.AddComponent<Image>();
-        ui.modalBackground.color = new Color(0f, 0f, 0f, 0f);
-        ui.modalBackground.raycastTarget = true;
-        var bgRect = bgGO.GetComponent<RectTransform>();
-        StretchFull(bgRect);
-        ui.modalBackground.gameObject.SetActive(false);
-
-        // 重新初始化所有子系统（它们的 Initialize() 依赖层引用非 null）
-        ui.Transition?.Initialize();
-        ui.Modal?.Initialize();
-        ui.Toast?.Initialize();
-        ui.HUD?.Initialize();
-        ui.Dialogue?.Initialize();
-        ui.ItemDisplay?.Initialize();
-
-        Debug.Log("[MemorySceneSetup] UI 层级已重建完成。");
+        else if (ui.modalLayer == null || ui.hudLayer == null || ui.overlayLayer == null)
+        {
+            Debug.LogWarning(
+                "[MemorySceneSetup] UISceneRoot 已注册但部分层引用为空，" +
+                "请检查 UISceneRoot Inspector 中 HUDLayer / OverlayLayer / ModalLayer 是否已正确赋值。");
+        }
+        else
+        {
+            Debug.Log("[MemorySceneSetup] UI 场景根检查通过。");
+        }
     }
 
-    private static RectTransform CreateUILayer(Transform parent, string name, int sortOrder)
+    /// <summary>
+    /// 查找并初始化 MemoryHUD（应在 UISceneRoot Prefab 的 HUDLayer 下）。
+    /// 如果没找到，给出警告但不阻止游戏运行。
+    /// </summary>
+    private void InitializeMemoryHUD()
     {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        var rect = go.AddComponent<RectTransform>();
-        StretchFull(rect);
-
-        var layerCanvas = go.AddComponent<Canvas>();
-        layerCanvas.overrideSorting = true;
-        layerCanvas.sortingOrder = sortOrder;
-        go.AddComponent<GraphicRaycaster>();
-
-        return rect;
-    }
-
-    private static void StretchFull(RectTransform rect)
-    {
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
+        var hud = FindAnyObjectByType<MemoryHUD>();
+        if (hud != null)
+        {
+            Debug.Log("[MemorySceneSetup] MemoryHUD 已就绪。");
+        }
+        else
+        {
+            Debug.LogWarning(
+                "[MemorySceneSetup] 未找到 MemoryHUD 组件。\n" +
+                "请在 UIRoot_Memory Prefab 的 HUDLayer/FragmentCounter 上挂载 MemoryHUD 脚本。\n" +
+                "碎片计数将仅通过 Toast 显示。");
+        }
     }
 }

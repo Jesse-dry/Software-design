@@ -118,7 +118,7 @@ public class GameManager : MonoBehaviour
         {
             case GamePhase.Boot:
                 // Boot 场景只用于初始化，直接进入主菜单
-                EnterPhase(GamePhase.MainMenu);
+             //   EnterPhase(GamePhase.MainMenu);
                 break;
 
             case GamePhase.MainMenu:

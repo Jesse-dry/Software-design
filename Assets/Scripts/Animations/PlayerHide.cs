@@ -3,59 +3,51 @@ using UnityEngine;
 public class PlayerHide : MonoBehaviour
 {
     [Header("图层设置")]
-    public int normalLayer = 5;  // 正常走路时的层级（必须比花瓶大，比如 5）
-    public int hideLayer = -1;   // 躲藏时的层级（必须比花瓶小，比如 -1）
+    public int normalLayer = 5;  
+    public int hideLayer = -1;   
 
-    private bool isNearVase = false; // 是否在花瓶旁边
-    public bool isHiding = false;   // 当前是否正在躲藏
-    private Transform vaseTransform; // 记录当前碰到的是哪个花瓶
+    private bool isNearVase = false; 
+    public bool isHiding = false;   
+    private Transform vaseTransform; 
 
     private SpriteRenderer spriteRenderer;
-    private playercontroller moveScript; // 获取你之前的移动脚本
+    private playercontroller moveScript; 
+
+    // 💡 注意：这里删掉了原来的 public GameObject hPromptUI
 
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        // 获取主角身上的移动控制脚本，方便躲藏时禁用它
         moveScript = GetComponent<playercontroller>();
-        
-        // 游戏开始时，确保是正常图层
         spriteRenderer.sortingOrder = normalLayer;
     }
 
     void Update()
     {
-        // 如果在花瓶旁边，并且按下了键盘的 H 键
-        if (Input.GetKeyDown(KeyCode.H))
-        {
-            Debug.Log("成功检测到 H 键被按下了！");
-        }
         if (isNearVase && Input.GetKeyDown(KeyCode.H))
         {
             if (isHiding == false)
             {
                 // —— 【开始躲藏】 ——
                 isHiding = true;
-                
-                // 1. 图层变小，跑到花瓶后面
                 spriteRenderer.sortingOrder = hideLayer; 
-                
-                // 2. 把人物强行吸附到花瓶的正中心 (X轴对齐)
                 transform.position = new Vector3(vaseTransform.position.x, transform.position.y, transform.position.z);
-                
-                // 3. 关掉移动脚本，防止玩家在花瓶后面还能乱跑
                 if (moveScript != null) moveScript.enabled = false;
+
+                // 💡 藏进花瓶后，把这个花瓶的提示牌藏起来
+                Transform ui = vaseTransform.Find("H_Prompt");
+                if (ui != null) ui.gameObject.SetActive(false);
             }
             else
             {
                 // —— 【出来，解除躲藏】 ——
                 isHiding = false;
-                
-                // 1. 图层变大，重新回到花瓶前面
                 spriteRenderer.sortingOrder = normalLayer; 
-                
-                // 2. 重新开启移动脚本，可以继续走路了
                 if (moveScript != null) moveScript.enabled = true;
+
+                // 💡 钻出来后，重新显示这个花瓶的提示牌
+                Transform ui = vaseTransform.Find("H_Prompt");
+                if (ui != null) ui.gameObject.SetActive(true);
             }
         }
     }
@@ -63,11 +55,15 @@ public class PlayerHide : MonoBehaviour
     // 当主角走入花瓶的感应区
     void OnTriggerEnter2D(Collider2D other)
     {
-        // 检查碰到的东西是不是贴了 "Vase" 标签
+        // 如果碰到的确实是花瓶
         if (other.CompareTag("Vase")) 
         {
             isNearVase = true;
-            vaseTransform = other.transform; // 记下这个花瓶的位置
+            vaseTransform = other.transform; 
+
+            // 💡 关键：只在这个被碰到的花瓶身上，寻找名字叫 "H_Prompt" 的提示牌，并打开它
+            Transform ui = other.transform.Find("H_Prompt");
+            if (ui != null) ui.gameObject.SetActive(true);
         }
     }
 
@@ -76,6 +72,10 @@ public class PlayerHide : MonoBehaviour
     {
         if (other.CompareTag("Vase"))
         {
+            // 💡 关键：离开时，把刚刚那个花瓶身上的提示牌关掉
+            Transform ui = other.transform.Find("H_Prompt");
+            if (ui != null) ui.gameObject.SetActive(false);
+
             isNearVase = false;
             vaseTransform = null;
         }

@@ -1,24 +1,20 @@
 using UnityEngine;
-using UnityEngine;
-using UnityEngine.UI; 
-using TMPro; // 1. 【核心修改】必须加这一行，才能识别新版文字
+using UnityEngine.UI;
+using TMPro;
+using System.Collections; // 用来支持延迟协程
 
 public class CountdownTimer : MonoBehaviour
 {
-    public float totalTime = 60f; 
-    
-    // 2. 【核心修改】将 Text 改为 TextMeshProUGUI
-    public TextMeshProUGUI timeText; 
+    public float totalTime = 60f;
+    public TextMeshProUGUI timeText;
+    public GameObject tryAgainScreen;
+    public GameObject playerBall;
 
-    public GameObject tryAgainScreen; 
-    public GameObject playerBall;     
-
-    private bool isRunning = true; 
-    private float initialTime; // 用来记住你设定的初始时间
+    private bool isRunning = true;
+    private float initialTime;
 
     void Start()
     {
-        // 游戏开始时记下初始时间，方便以后重置
         initialTime = totalTime;
     }
 
@@ -26,34 +22,55 @@ public class CountdownTimer : MonoBehaviour
     {
         if (isRunning && totalTime > 0)
         {
-            totalTime -= Time.deltaTime; 
+            totalTime -= Time.deltaTime;
 
             if (totalTime <= 0)
             {
-                totalTime = 0;     
-                isRunning = false; 
-                
-                if (tryAgainScreen != null)
-                {
-                    tryAgainScreen.SetActive(true);
-                }
-                
-                if (playerBall != null)
-                {
-                    playerBall.SetActive(false);
-                }
+                totalTime = 0;
+                isRunning = false;
+
+                // 【修改】隐藏小球，且不再显示 Try Again 屏幕（因为要强制转场了）
+                if (tryAgainScreen != null) tryAgainScreen.SetActive(false);
+                if (playerBall != null) playerBall.SetActive(false);
+
+                // 开启失败转场协程
+                StartCoroutine(FailureAndTransition());
             }
 
-            // 更新文字显示
             if (timeText != null)
             {
-                timeText.text =  Mathf.CeilToInt(totalTime).ToString();
+                timeText.text = Mathf.CeilToInt(totalTime).ToString();
             }
         }
     }
 
-    // --- 额外赠送：重置倒计时的功能 ---
-    // 你可以把这个方法绑定在 Try Again 按钮上
+    // ==========================================
+    // 【核心新增】失败并强行带入法庭的逻辑
+    // ==========================================
+    private IEnumerator FailureAndTransition()
+    {
+        // 1. 弹出警告提示 (GlitchFlash 闪烁效果最适合这种警报)
+        if (UIManager.Instance != null && UIManager.Instance.Toast != null)
+        {
+            UIManager.Instance.Toast.Show("破解超时！安保系统已锁定！", ToastStyle.GlitchFlash);
+        }
+
+        // 2. 增加混乱值惩罚
+        if (ChaosManager.Instance != null)
+        {
+            ChaosManager.Instance.AddChaos(30, "破解终端超时");
+        }
+
+        // 3. 停顿 2 秒，让玩家看到红字警告和混乱值增加
+        yield return new WaitForSeconds(2.0f);
+
+        // 4. 强行拉入法庭阶段！
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.EnterPhase(GamePhase.Court);
+        }
+    }
+
     public void ResetTimer()
     {
         totalTime = initialTime;

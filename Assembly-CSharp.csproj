@@ -56,6 +56,7 @@
     <Compile Include="Assets\Scripts\Gameplay\MemoryFragmentNode.cs" />
     <Compile Include="Assets\Scripts\迷宫\MovingWall1.cs" />
     <Compile Include="Assets\DOTween\Modules\DOTweenModulePhysics2D.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\ItemFloatEffect.cs" />
     <Compile Include="Assets\DOTween\Modules\DOTweenModuleUI.cs" />
     <Compile Include="Assets\Scripts\UI\ChaosHUDAdapter.cs" />
     <Compile Include="Assets\Scripts\UI\MemoryHUD.cs" />
@@ -86,6 +87,7 @@
     <Compile Include="Assets\_Recovery\OldMainMenu\Scripts\TitleInteraction.cs" />
     <Compile Include="Assets\Scripts\UI\ItemDisplaySystem.cs" />
     <Compile Include="Assets\Scripts\UI\MainMenuController.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\DoorToCorridorNode.cs" />
     <Compile Include="Assets\Scripts\Core\GameBootstrapper.cs" />
     <Compile Include="Assets\LLMModule\Data\ChapterConfig.cs" />
     <Compile Include="Assets\Scripts\Core\GameBootConfig.cs" />
@@ -126,6 +128,7 @@
     <Compile Include="Assets\Scripts\Gameplay\SecretClueNode.cs" />
     <Compile Include="Assets\Scripts\Data\CourtTopic.cs" />
     <Compile Include="Assets\Scripts\CameraFollow.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\AbyssClueNode.cs" />
     <Compile Include="Assets\Scripts\Data\EvidenceType.cs" />
     <Compile Include="Assets\DOTween\Modules\DOTweenModuleSprite.cs" />
     <Compile Include="Assets\Scripts\UI\ToastSystem.cs" />

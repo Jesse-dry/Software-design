@@ -26,6 +26,7 @@ public class SceneController : MonoBehaviour
     private string abyssScene = "Abyss";
     private string courtScene = "Court";
     private string DecodeGameScene = "DecodeGame";
+    private string corridorScene = "Corridor";
 
     private bool isLoading = false;
 
@@ -108,6 +109,11 @@ public class SceneController : MonoBehaviour
     public void LoadDecodeGame()
     {
         LoadScene(DecodeGameScene);
+    }
+
+    public void LoadCorridor()
+    {
+        LoadScene(corridorScene);
     }
 
     // =========================

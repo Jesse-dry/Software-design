@@ -142,6 +142,10 @@ public class GameManager : MonoBehaviour
                 SceneController.Instance?.LoadDecodeGame();
                 break;
 
+            case GamePhase.Corridor:
+                SceneController.Instance?.LoadCorridor();
+                break;
+
             case GamePhase.Court:
                 SceneController.Instance?.LoadCourt();
                 break;

@@ -19,4 +19,5 @@ public enum GamePhase
     Court,      // 庭审：举证/辩论阶段
     Result,     // 结局：展示结果
     DecodeGame,    //拷贝时的小游戏/
+    Corridor      //走廊
 }

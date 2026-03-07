@@ -82,6 +82,34 @@ public class DialoguePlayer : MonoBehaviour
     //  初始化
     // ══════════════════════════════════════════════════════════════
 
+    /// <summary>
+    /// 运行时批量配置对话参数（供 MemorySceneSetup 等场景 Setup 脚本调用）。
+    /// 负值 / null 表示保留当前值不变。
+    /// 必须在 Initialize() 之后调用（Initialize 由 UIManager.RegisterSceneRoot 触发）。
+    /// </summary>
+    /// <param name="effect">文字特效类型</param>
+    /// <param name="newCharDelay">打字机字符间隔（&lt;0 保留原值）</param>
+    /// <param name="speakerCol">说话人名颜色（null 保留原值）</param>
+    /// <param name="bodyCol">正文颜色（null 保留原值）</param>
+    /// <param name="newPanelAnim">面板淡入淡出时长（&lt;0 保留原值）</param>
+    public void Configure(
+        TextEffectType effect,
+        float          newCharDelay  = -1f,
+        Color?         speakerCol    = null,
+        Color?         bodyCol       = null,
+        float          newPanelAnim  = -1f)
+    {
+        textEffect = effect;
+        if (newCharDelay >= 0f)     charDelay         = newCharDelay;
+        if (speakerCol.HasValue)    speakerColor      = speakerCol.Value;
+        if (bodyCol.HasValue)       dialogueColor     = bodyCol.Value;
+        if (newPanelAnim >= 0f)     panelAnimDuration = newPanelAnim;
+
+        // 如果面板已创建（Initialize 已运行），同步更新面板内文字组件颜色
+        if (speakerNameText != null) speakerNameText.color = speakerColor;
+        if (dialogueText    != null) dialogueText.color    = dialogueColor;
+    }
+
     public void Initialize()
     {
         // 清理旧状态（场景切换时，旧面板已随场景销毁）

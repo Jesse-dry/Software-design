@@ -199,51 +199,9 @@ public static class UISceneRootGenerator
     //  场景专属子元素
     // ══════════════════════════════════════════════════════════════
 
-    /// <summary>Memory 场景：碎片收集计数 + 进度条占位</summary>
+    /// <summary>Memory 场景：底部交互提示栏占位</summary>
     private static void BuildMemoryExtras(RectTransform hudLayer, RectTransform modalLayer)
     {
-        // ── 碎片计数 HUD（右上角） ──
-        var counterPanel = new GameObject("FragmentCounter");
-        counterPanel.transform.SetParent(hudLayer, false);
-        var cpRect = counterPanel.AddComponent<RectTransform>();
-        cpRect.anchorMin = new Vector2(1, 1);
-        cpRect.anchorMax = new Vector2(1, 1);
-        cpRect.pivot = new Vector2(1, 1);
-        cpRect.anchoredPosition = new Vector2(-30, -30);
-        cpRect.sizeDelta = new Vector2(200, 60);
-
-        // 背景
-        var cpBg = counterPanel.AddComponent<Image>();
-        cpBg.color = new Color(0.02f, 0.02f, 0.05f, 0.6f);
-
-        // 图标占位
-        var iconGO = new GameObject("Icon");
-        iconGO.transform.SetParent(counterPanel.transform, false);
-        var iconRect = iconGO.AddComponent<RectTransform>();
-        iconRect.anchorMin = new Vector2(0, 0);
-        iconRect.anchorMax = new Vector2(0, 1);
-        iconRect.pivot = new Vector2(0, 0.5f);
-        iconRect.anchoredPosition = new Vector2(10, 0);
-        iconRect.sizeDelta = new Vector2(40, 40);
-        var iconImg = iconGO.AddComponent<Image>();
-        iconImg.color = new Color(0.6f, 0.4f, 0.9f, 0.8f); // 紫色占位
-
-        // 计数文本占位（美术可替换字体/颜色）
-        var textGO = new GameObject("CountText");
-        textGO.transform.SetParent(counterPanel.transform, false);
-        var textRect = textGO.AddComponent<RectTransform>();
-        textRect.anchorMin = new Vector2(0, 0);
-        textRect.anchorMax = new Vector2(1, 1);
-        textRect.offsetMin = new Vector2(55, 5);
-        textRect.offsetMax = new Vector2(-10, -5);
-        // 注意：TMP 组件需在编辑器中手动添加（Prefab 模式），
-        // 此处用 Text 作为占位，美术替换为 TMP 即可。
-        var text = textGO.AddComponent<Text>();
-        text.text = "碎片 0/4";
-        text.fontSize = 22;
-        text.color = new Color(0.9f, 0.85f, 0.95f);
-        text.alignment = TextAnchor.MiddleLeft;
-
         // ── 底部提示栏（"按 E 交互"类通用提示） ──
         var promptBar = new GameObject("InteractionPrompt");
         promptBar.transform.SetParent(hudLayer, false);

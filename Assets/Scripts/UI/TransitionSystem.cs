@@ -169,6 +169,35 @@ public class TransitionSystem : MonoBehaviour
         transitionType = type;
     }
 
+    /// <summary>
+    /// 运行时批量配置转场参数（供 MemorySceneSetup 等场景 Setup 脚本调用）。
+    /// 负值 / Ease.Unset 表示保留当前值不变。
+    /// </summary>
+    /// <param name="type">转场效果类型</param>
+    /// <param name="duration">默认淡入淡出时长（&gt;0 才生效）</param>
+    /// <param name="inEase">淡入缓动（Ease.Unset 保留原值）</param>
+    /// <param name="outEase">淡出缓动（Ease.Unset 保留原值）</param>
+    /// <param name="newGlitchIntensity">Glitch 强度（&lt;0 保留原值）</param>
+    /// <param name="newGlitchFrequency">Glitch 频率（&lt;0 保留原值）</param>
+    /// <param name="newGlitchDuration">Glitch 持续时间（&lt;0 保留原值）</param>
+    public void Configure(
+        TransitionType type,
+        float          duration           = -1f,
+        Ease           inEase             = Ease.Unset,
+        Ease           outEase            = Ease.Unset,
+        float          newGlitchIntensity = -1f,
+        float          newGlitchFrequency = -1f,
+        float          newGlitchDuration  = -1f)
+    {
+        transitionType = type;
+        if (duration           > 0f)          defaultDuration  = duration;
+        if (inEase             != Ease.Unset) fadeInEase       = inEase;
+        if (outEase            != Ease.Unset) fadeOutEase      = outEase;
+        if (newGlitchIntensity >= 0f)         glitchIntensity  = newGlitchIntensity;
+        if (newGlitchFrequency >= 0f)         glitchFrequency  = newGlitchFrequency;
+        if (newGlitchDuration  >= 0f)         glitchDuration   = newGlitchDuration;
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  内部实现
     // ══════════════════════════════════════════════════════════════

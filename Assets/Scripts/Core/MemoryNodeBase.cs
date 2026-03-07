@@ -13,16 +13,23 @@ public abstract class MemoryNodeBase : MonoBehaviour
     // ── 提示样式（可在子类 Inspector 覆盖） ──────────────────────
     [Header("== 提示文字样式 ==")]
     [Tooltip("字体大小（CharacterSize）")]
-    public float promptCharSize = 0.15f;
+    public float promptCharSize = 0.08f;
 
     [Tooltip("字号（FontSize，影响清晰度）")]
     public int promptFontSize = 64;
 
+    [Tooltip("字体样式（Normal / Italic / Bold / BoldAndItalic）")]
+    public FontStyle promptFontStyle = FontStyle.Italic;
+
     [Tooltip("文字颜色")]
-    public Color promptColor = new Color(0.95f, 0.95f, 1f, 0.95f);
+    public Color promptColor = new Color(0.18f, 0.47f, 0.96f, 1f);
 
     [Tooltip("排序层级（越大越前）")]
     public int promptSortingOrder = 200;
+
+    [Header("== 提示文字位置 ==")]
+    [Tooltip("相机可视区域内提示文字的 Y 轴偏移比例（相对 orthographicSize）")]
+    public float promptCameraYRatio = 0.4f;
 
     // ── 抽象接口 ─────────────────────────────────────────────────
 
@@ -69,6 +76,7 @@ public abstract class MemoryNodeBase : MonoBehaviour
             _promptTextMesh.fontSize = promptFontSize;
             _promptTextMesh.alignment = TextAlignment.Center;
             _promptTextMesh.anchor = TextAnchor.MiddleCenter;
+            _promptTextMesh.fontStyle = promptFontStyle;
             _promptTextMesh.color = promptColor;
             _promptTextMesh.richText = false;
 

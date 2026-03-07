@@ -20,6 +20,13 @@ public class AbyssPortal : MonoBehaviour
     public int requiredFragments = 4;
     private int currentFragments = 0;
 
+    [Header("== 文字配置 ==")]
+    [Tooltip("碎片不足时尝试进入的 Toast 提示")]
+    public string insufficientToastText = "记忆碎片不足，继续探索吧。";
+
+    [Tooltip("进入深渊确认弹窗文字")]
+    public string confirmText = "潜入深渊，探寻真相？";
+
     private bool _transitioning;
     private PlayerMovement _frozenPlayer;
     private PlayerInteraction _playerInteraction;
@@ -51,8 +58,7 @@ public class AbyssPortal : MonoBehaviour
 
         if (currentFragments < requiredFragments)
         {
-            UIManager.Instance?.Toast?.Show(
-                $"记忆碎片不足（{currentFragments}/{requiredFragments}），继续探索吧。");
+            UIManager.Instance?.Toast?.Show(insufficientToastText);
             return;
         }
 
@@ -68,7 +74,7 @@ public class AbyssPortal : MonoBehaviour
         var modal = UIManager.Instance?.Modal;
         if (modal != null)
         {
-            modal.ShowConfirm("潜入深渊，探寻真相？",
+            modal.ShowConfirm(confirmText,
                 onYes: OnConfirm,
                 onNo:  OnCancel);
         }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using DG.Tweening;
 
 /// <summary>
 /// Memory 场景初始化脚本。
@@ -18,10 +19,6 @@ using UnityEngine.UI;
 /// </summary>
 public class MemorySceneSetup : MonoBehaviour
 {
-    [Header("== 兼容迁移 ==")]
-    [Tooltip("启用后会在运行时清理旧版记忆场景对象，避免与新版流程冲突")]
-    public bool removeLegacyMemoryObjects = true;
-
     [Header("== 帧序列 ==")]
     [Tooltip("背景帧序列 Sprite 数组（96 帧）。可在 Inspector 拖入，或通过 Resources 快捷加载")]
     public Sprite[] backgroundFrames;
@@ -72,6 +69,21 @@ public class MemorySceneSetup : MonoBehaviour
     [Tooltip("门的 Y 坐标")]
     public float portalY = 19f;
 
+    [Tooltip("门需要的碎片数量")]
+    public int portalRequiredFragments = 4;
+
+    [Tooltip("碎片不足时的提示文字（门）")]
+    public string portalInsufficientText = "碎片不足，继续探索吧";
+
+    [Tooltip("碎片集齐后按 E 的提示文字（门）")]
+    public string portalReadyText = "按 E 进入深渊";
+
+    [Tooltip("碎片不足时尝试进入深渊的 Toast 文字")]
+    public string portalInsufficientToastText = "记忆碎片不足，继续探索吧。";
+
+    [Tooltip("进入深渊的确认弹窗文字")]
+    public string portalConfirmText = "潜入深渊，探寻真相？";
+
     [Header("== 碎片缩放 ==")]
     [Tooltip("碎片 Sprite 缩放")]
     public float fragmentScale = 0.5f;
@@ -79,6 +91,157 @@ public class MemorySceneSetup : MonoBehaviour
     [Header("== 透视设置 ==")]
     [Tooltip("碎片的透视消失点（世界/屏幕坐标，通常是 (0,0)）")]
     public Vector2 perspectiveVanishingPoint = Vector2.zero;
+
+    // ────────────────────────────────────────────────────────────────────
+    //  交互文字
+    //  以下字段在运行时写入动态创建的 MemoryFragmentNode，便于直接在 Inspector 修改
+    // ────────────────────────────────────────────────────────────────────
+
+    [Header("== 交互文字 ==")]
+    [Tooltip("玩家靠近碎片时的操作提示文字")]
+    public string fragmentInteractPromptText = "按 E 交互";
+
+    [Tooltip("碎片弹窗关闭按钮文字")]
+    public string fragmentCloseButtonText = "关闭";
+
+    // ────────────────────────────────────────────────────────────────────
+    //  提示文字样式
+    //  对应 MemoryNodeBase 中的 promptXxx 字段，运行时写入动态创建的碎片节点
+    // ────────────────────────────────────────────────────────────────────
+
+    [Header("== 提示文字样式 ==")]
+    [Tooltip("世界空间文字大小（CharacterSize）")]
+    [Range(0.05f, 0.5f)]
+    public float fragmentPromptCharSize = 0.15f;
+
+    [Tooltip("字号（FontSize，影响清晰度）")]
+    [Range(16, 128)]
+    public int fragmentPromptFontSize = 64;
+
+    [Tooltip("提示文字颜色")]
+    public Color fragmentPromptColor = new Color(0.95f, 0.95f, 1f, 0.95f);
+
+    [Tooltip("提示文字的 MeshRenderer 排序层级（越大越靠前）")]
+    public int fragmentPromptSortingOrder = 200;
+
+    // ────────────────────────────────────────────────────────────────────
+    //  UI 效果调节
+    //  以下参数在场景初始化时自动应用到 UIManager 对应子系统
+    //  修改后无需改代码，保存场景即生效
+    // ────────────────────────────────────────────────────────────────────
+
+    [Header("== UI 覆盖开关 ==")]
+    [Tooltip("启用后 MemorySceneSetup 的'碎片文字动画'参数会在运行时覆盖 UIManager Prefab 中 DialoguePlayer 的同名设置。\n"
+           + "关闭（默认）则完全以 Prefab 为准，不做任何修改。")]
+    public bool overrideDialogueSettings = false;
+
+    [Tooltip("启用后 MemorySceneSetup 的'转场效果'参数会在运行时覆盖 UIManager Prefab 中 TransitionSystem 的同名设置。\n"
+           + "关闭（默认）则完全以 Prefab 为准，不做任何修改。")]
+    public bool overrideTransitionSettings = false;
+
+    [Tooltip("启用后 MemorySceneSetup 的'按钮样式'参数会在运行时覆盖 UIManager Prefab 中 ModalSystem 的按钮样式设置。\n"
+           + "关闭（默认）则完全以 Prefab 为准，不做任何修改。")]
+    public bool overrideButtonStyle = false;
+
+    [Header("== 碎片文字动画 ==")]
+    [Tooltip("碎片对话框的文字出现效果\n"
+           + "  Typewriter     — 逐字打出（默认）\n"
+           + "  Decode         — 乱码逐字解码\n"
+           + "  FadeInPerChar  — 每字淡入\n"
+           + "  GlitchLoop     — 持续故障抖动\n"
+           + "  Wave           — 波浪起伏")]
+    public TextEffectType fragmentTextEffect = TextEffectType.Typewriter;
+
+    [Tooltip("打字机每个字符的停留时间（秒），仅 Typewriter / Decode / FadeInPerChar 有效\n0.01 = 极快，0.1 = 较慢，0.2 = 可明显感到停顿")]
+    [Range(0.01f, 0.2f)]
+    public float fragmentCharDelay = 0.04f;
+
+    [Tooltip("说话人名字颜色（如《深竭瘁00山》等 NPC 名）")]
+    public Color fragmentSpeakerColor = new Color(0.4f, 0.9f, 0.65f, 1f);
+
+    [Tooltip("碎片正文颜色")]
+    public Color fragmentBodyColor = new Color(0.85f, 0.85f, 0.9f, 1f);
+
+    [Tooltip("对话框淡入 / 淡出时长（秒）")]
+    [Range(0.1f, 0.8f)]
+    public float fragmentPanelFadeDuration = 0.3f;
+
+    [Header("== 背景渲染 ==")]
+    [Tooltip("背景 Sprite 颜色叠加（白色 = 原色，偏暗 = 整体变暗）\n"
+           + "小投巧：红色通道小于其他通道可调出蓝紫教堂感")]
+    public Color backgroundTint = Color.white;
+
+    [Tooltip("背景的整体缩放（1 = 原始大小）\n"
+           + "调大可防止个别分辨率下出现黑边")]
+    [Range(0.5f, 4f)]
+    public float backgroundScale = 1f;
+
+    [Tooltip("背景 Sprite 排序层（颜小越靠后，默认 -100）")]
+    public int backgroundSortingOrder = -100;
+
+    [Header("== 转场效果 ==")]
+    [Tooltip("转场类型\n"
+           + "  FadeBlack  — 黑幕淡入淡出（默认）\n"
+           + "  FadeWhite  — 白光闪烁（记忆闪回感）\n"
+           + "  GlitchFade — 故障批动 + 淡入淡出（数字世界感）")]
+    public TransitionType memoryTransitionType = TransitionType.FadeBlack;
+
+    [Tooltip("转场淡入淡出的默认时长（秒），影响进入和开局转入 Memory 后的黑幕消散速度")]
+    [Range(0.1f, 3f)]
+    public float transitionDuration = 1f;
+
+    [Tooltip("淡入缓动曲线（黑幕出现时）")]
+    public Ease transitionFadeInEase = Ease.InQuad;
+
+    [Tooltip("淡出缓动曲线（黑幕消散时）")]
+    public Ease transitionFadeOutEase = Ease.OutQuad;
+
+    [Tooltip("[GlitchFade] 抗扩抖动强度，越大位移越明显")]
+    [Range(1f, 20f)]
+    public float transitionGlitchIntensity = 5f;
+
+    [Tooltip("[GlitchFade] Glitch 持续时间（秒），超过此时长后过渡到平滑淡入淡出")]
+    [Range(0.1f, 2f)]
+    public float transitionGlitchDuration = 0.5f;
+
+    [Tooltip("[GlitchFade] Glitch 帧间回调间隔（秒，越小越高频）")]
+    [Range(0.01f, 0.2f)]
+    public float transitionGlitchFrequency = 0.05f;
+
+    // ────────────────────────────────────────────────────────────────────
+    //  按钮样式（覆盖 ModalSystem 中的按钮外观）
+    //  设置 overrideButtonStyle = true 后以下参数生效
+    // ────────────────────────────────────────────────────────────────────
+
+    [Header("== 按钮样式 ==")]
+    [Tooltip("按钮大小覆盖（设为 (0,0) 保留原始大小）")]
+    public Vector2 buttonSize = Vector2.zero;
+
+    [Tooltip("悬停缩放倍率")]
+    [Range(1f, 1.3f)]
+    public float buttonHoverScale = 1.08f;
+
+    [Tooltip("按下缩放倍率")]
+    [Range(0.85f, 1f)]
+    public float buttonPressScale = 0.95f;
+
+    [Tooltip("按钮常态背景色")]
+    public Color buttonNormalColor = new Color(0.15f, 0.15f, 0.2f, 1f);
+
+    [Tooltip("按钮悬停背景色")]
+    public Color buttonHoverColor = new Color(0.25f, 0.25f, 0.35f, 1f);
+
+    [Tooltip("按钮按下背景色")]
+    public Color buttonPressColor = new Color(0.1f, 0.3f, 0.2f, 1f);
+
+    [Tooltip("按钮常态文字颜色")]
+    public Color buttonNormalTextColor = new Color(0.7f, 0.9f, 0.7f, 1f);
+
+    [Tooltip("按钮悬停文字颜色")]
+    public Color buttonHoverTextColor = new Color(0.9f, 1f, 0.9f, 1f);
+
+    [Tooltip("是否启用发光边框效果")]
+    public bool buttonGlowOutline = false;
 
     private bool initialized;
 
@@ -92,18 +255,15 @@ public class MemorySceneSetup : MonoBehaviour
         // 的 Initialize() 会静默失败，导致交互后弹窗不显示、Toast 不出现、转场黑屏等问题。
         EnsureUILayers();
 
+        // 将 Inspector 中设置的 UI 效果参数应用到各子系统
+        ApplyUIEffectSettings();
+
         SetupScene();
     }
 
     private void SetupScene()
     {
-        if (removeLegacyMemoryObjects)
-            CleanupLegacyMemoryObjects();
-
         EnsureEventSystem();
-
-        // 初始化 MemoryHUD（从 UISceneRoot Prefab 中查找）
-        InitializeMemoryHUD();
 
         // ─── 1. 创建 Player ────────────────────────────────────
         var playerGO = new GameObject("Player");
@@ -141,8 +301,10 @@ public class MemorySceneSetup : MonoBehaviour
         // ─── 2. 创建背景 ──────────────────────────────────────
         var bgGO = new GameObject("ParallaxBackground");
         var bgSR = bgGO.AddComponent<SpriteRenderer>();
-        bgSR.sortingOrder = -100; // 最底层
-        bgGO.transform.position = Vector3.zero;
+        bgSR.sortingOrder = backgroundSortingOrder;
+        bgSR.color        = backgroundTint;
+        bgGO.transform.position   = Vector3.zero;
+        bgGO.transform.localScale = Vector3.one * backgroundScale;
 
         var parallax = bgGO.AddComponent<MemoryParallaxBackground>();
         parallax.SetFrames(backgroundFrames, playerGO.transform, startY, endY);
@@ -153,7 +315,7 @@ public class MemorySceneSetup : MonoBehaviour
             bgSR.sprite = backgroundFrames[0];
         }
 
-        int collectedCount = 0;
+        int alreadyCollected = 0;
 
         // ─── 3. 创建 4 个碎片 ────────────────────────────────
         for (int i = 0; i < 4; i++)
@@ -161,7 +323,7 @@ public class MemorySceneSetup : MonoBehaviour
             string fragmentId = $"fragment_{i + 1}";
             if (MemoryFragmentNode.IsCollected(fragmentId))
             {
-                collectedCount++;
+                alreadyCollected++;
                 continue;
             }
 
@@ -181,6 +343,16 @@ public class MemorySceneSetup : MonoBehaviour
             fragNode.SetFragmentId(fragmentId);
             fragNode.fragmentTitle = i < fragmentTitles.Length ? fragmentTitles[i] : $"碎片 #{i + 1}";
             fragNode.fragmentBody = i < fragmentBodies.Length ? fragmentBodies[i] : "一段破碎的记忆……";
+
+            // 应用交互文字（由 MemorySceneSetup Inspector 统一配置）
+            fragNode.interactPromptText  = fragmentInteractPromptText;
+            fragNode.modalCloseButtonText = fragmentCloseButtonText;
+
+            // 应用提示文字样式（继承自 MemoryNodeBase，运行时写入）
+            fragNode.promptCharSize     = fragmentPromptCharSize;
+            fragNode.promptFontSize     = fragmentPromptFontSize;
+            fragNode.promptColor        = fragmentPromptColor;
+            fragNode.promptSortingOrder = fragmentPromptSortingOrder;
 
             // 子物体：视觉表现（Sprite Renderer）
             var fragVisualGO = new GameObject("Visual");
@@ -229,15 +401,19 @@ public class MemorySceneSetup : MonoBehaviour
         portalCol.isTrigger = true;
 
         var portal = portalGO.AddComponent<AbyssPortal>();
-        portal.requiredFragments = 4;
+        portal.requiredFragments = portalRequiredFragments;
+        portal.insufficientToastText = portalInsufficientToastText;
+        portal.confirmText = portalConfirmText;
 
         // 同步已收集碎片数量（避免跳过生成后门进度仍为 0）
-        for (int i = 0; i < collectedCount; i++)
+        for (int i = 0; i < alreadyCollected; i++)
         {
             portal.CollectFragment();
         }
 
-        portalGO.AddComponent<AbyssPortalNode>();
+        var portalNode = portalGO.AddComponent<AbyssPortalNode>();
+        portalNode.readyText = portalReadyText;
+        portalNode.insufficientText = portalInsufficientText;
 
         // ─── 5. 相机设置 ──────────────────────────────────────
         var cam = Camera.main;
@@ -250,50 +426,10 @@ public class MemorySceneSetup : MonoBehaviour
             cam.transform.position = new Vector3(0f, 0f, -10f);
         }
 
-        // 更新 MemoryHUD 碎片初始计数
-        if (MemoryHUD.Instance != null)
-        {
-            int totalFragments = 4;
-            MemoryHUD.Instance.UpdateCount(collectedCount, totalFragments);
-        }
-
         Debug.Log("[MemorySceneSetup] 场景初始化完成 — Player/Background/Fragments/Portal 已创建。");
     }
 
-    private void CleanupLegacyMemoryObjects()
-    {
-        // 旧版玩家（只清理场景内已有对象，避免重复 Player）
-        var players = FindObjectsByType<PlayerMovement>(FindObjectsSortMode.None);
-        for (int i = 0; i < players.Length; i++)
-        {
-            if (players[i] == null) continue;
-            Destroy(players[i].gameObject);
-        }
 
-        // 旧版碎片与门
-        var fragments = FindObjectsByType<MemoryFragmentNode>(FindObjectsSortMode.None);
-        for (int i = 0; i < fragments.Length; i++)
-        {
-            if (fragments[i] == null) continue;
-            Destroy(fragments[i].gameObject);
-        }
-
-        var portals = FindObjectsByType<AbyssPortal>(FindObjectsSortMode.None);
-        for (int i = 0; i < portals.Length; i++)
-        {
-            if (portals[i] == null) continue;
-            Destroy(portals[i].gameObject);
-        }
-
-        // 旧版背景
-        var oldParallax = FindObjectsByType<MemoryParallaxBackground>(FindObjectsSortMode.None);
-        for (int i = 0; i < oldParallax.Length; i++)
-        {
-            if (oldParallax[i] == null) continue;
-            Destroy(oldParallax[i].gameObject);
-        }
-
-    }
 
     /// <summary>
     /// 确保场景中有 EventSystem（UI 按钮点击必需）。
@@ -353,23 +489,101 @@ public class MemorySceneSetup : MonoBehaviour
         }
     }
 
+    // ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+    //  UI 效果参数应用
+    // ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+
     /// <summary>
-    /// 查找并初始化 MemoryHUD（应在 UISceneRoot Prefab 的 HUDLayer 下）。
-    /// 如果没找到，给出警告但不阻止游戏运行。
+    /// 将 Inspector 字段中设置的效果参数应用到 UIManager 对应子系统。
+    /// 在 EnsureUILayers() 之后、SetupScene() 之前调用，确保 UIManager 已初始化。
     /// </summary>
-    private void InitializeMemoryHUD()
+    private void ApplyUIEffectSettings()
     {
-        var hud = FindAnyObjectByType<MemoryHUD>();
-        if (hud != null)
+        var ui = UIManager.Instance;
+        if (ui == null) return;
+
+        // ── 碎片文字效果（DialoguePlayer）────────────────────────
+        // 仅在 overrideDialogueSettings = true 时才写入，否则以 Prefab 序列化值为准
+        if (overrideDialogueSettings)
         {
-            Debug.Log("[MemorySceneSetup] MemoryHUD 已就绪。");
+            if (ui.Dialogue != null)
+            {
+                ui.Dialogue.Configure(
+                    effect:       fragmentTextEffect,
+                    newCharDelay: fragmentCharDelay,
+                    speakerCol:   fragmentSpeakerColor,
+                    bodyCol:      fragmentBodyColor,
+                    newPanelAnim: fragmentPanelFadeDuration);
+
+                Debug.Log("[MemorySceneSetup] 对话效果已覆盖: " + fragmentTextEffect);
+            }
+            else
+            {
+                Debug.LogWarning("[MemorySceneSetup] UIManager.Dialogue 为 null，跳过文字效果应用。");
+            }
         }
         else
         {
-            Debug.LogWarning(
-                "[MemorySceneSetup] 未找到 MemoryHUD 组件。\n" +
-                "请在 UIRoot_Memory Prefab 的 HUDLayer/FragmentCounter 上挂载 MemoryHUD 脚本。\n" +
-                "碎片计数将仅通过 Toast 显示。");
+            Debug.Log("[MemorySceneSetup] overrideDialogueSettings=false，对话效果以 Prefab 设置为准。");
+        }
+
+        // ── 转场效果（TransitionSystem）───────────────────────────
+        // 仅在 overrideTransitionSettings = true 时才写入，否则以 Prefab 序列化值为准
+        if (overrideTransitionSettings)
+        {
+            if (ui.Transition != null)
+            {
+                ui.Transition.Configure(
+                    type:              memoryTransitionType,
+                    duration:          transitionDuration,
+                    inEase:            transitionFadeInEase,
+                    outEase:           transitionFadeOutEase,
+                    newGlitchIntensity: transitionGlitchIntensity,
+                    newGlitchFrequency: transitionGlitchFrequency,
+                    newGlitchDuration:  transitionGlitchDuration);
+
+                Debug.Log("[MemorySceneSetup] 转场效果已覆盖: " + memoryTransitionType);
+            }
+            else
+            {
+                Debug.LogWarning("[MemorySceneSetup] UIManager.Transition 为 null，跳过转场效果应用。");
+            }
+        }
+        else
+        {
+            Debug.Log("[MemorySceneSetup] overrideTransitionSettings=false，转场效果以 Prefab 设置为准。");
+        }
+
+        // ── 按钮样式（ModalSystem）────────────────────────────────
+        // 仅在 overrideButtonStyle = true 时才写入，否则以 Prefab 序列化值为准
+        if (overrideButtonStyle)
+        {
+            if (ui.Modal != null)
+            {
+                ui.Modal.ConfigureButtonStyle(
+                    enabled:    true,
+                    size:       buttonSize,
+                    hoverScale: buttonHoverScale,
+                    pressScale: buttonPressScale,
+                    normalBg:   buttonNormalColor,
+                    hoverBg:    buttonHoverColor,
+                    pressBg:    buttonPressColor,
+                    normalText: buttonNormalTextColor,
+                    hoverText:  buttonHoverTextColor,
+                    glow:       buttonGlowOutline);
+
+                Debug.Log("[MemorySceneSetup] 按钮样式已覆盖。");
+            }
+            else
+            {
+                Debug.LogWarning("[MemorySceneSetup] UIManager.Modal 为 null，跳过按钮样式应用。");
+            }
+        }
+        else
+        {
+            Debug.Log("[MemorySceneSetup] overrideButtonStyle=false，按钮样式以 Prefab 设置为准。");
         }
     }
+
+
 }

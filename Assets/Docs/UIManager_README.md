@@ -56,10 +56,9 @@
 
 ### Memory 场景特殊说明
 
-- `UIRoot_Memory` 预置了 `FragmentCounter` 面板（右上角碎片计数显示）
-- 需在 Prefab 的 `FragmentCounter` 对象上挂载 `MemoryHUD` 脚本
-- `MemorySceneSetup` 会自动查找 `MemoryHUD` 并在运行时更新碎片计数
-- 碎片收集时自动播放脉冲动画 + Toast 通知
+- `UIRoot_Memory` 预置了底部交互提示栏
+- 碎片收集逻辑由 `MemoryFragmentNode` + `AbyssPortal` 处理
+- UI 文字可在 `MemorySceneSetup` Inspector 中统一配置
 
 ### 美术修改 Prefab 的注意事项
 
@@ -85,7 +84,6 @@
 - HUDSystem（数值飘字）
 - ItemDisplaySystem（道具面板）
 - MemoryNodeBase（世界空间提示文字）
-- MemoryHUD（碎片计数文字）
 
 ### 字体加载优先级
 

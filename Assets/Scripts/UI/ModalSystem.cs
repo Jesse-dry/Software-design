@@ -40,6 +40,39 @@ public class ModalSystem : MonoBehaviour
     [SerializeField] private GameObject textModalPrefab;
     [SerializeField] private GameObject confirmModalPrefab;
 
+    [Header("== 按钮样式 ==")]
+    [Tooltip("是否对弹窗按钮启用 StyledButton 悬停/按下效果")]
+    [SerializeField] private bool useStyledButtons = true;
+
+    [Tooltip("按钮大小覆盖（设为 (0,0) 则保留原始大小）")]
+    [SerializeField] private Vector2 styledButtonSize = Vector2.zero;
+
+    [Tooltip("悬停缩放")]
+    [Range(1f, 1.3f)]
+    [SerializeField] private float styledHoverScale = 1.08f;
+
+    [Tooltip("按下缩放")]
+    [Range(0.85f, 1f)]
+    [SerializeField] private float styledPressScale = 0.95f;
+
+    [Tooltip("常态背景颜色")]
+    [SerializeField] private Color styledNormalColor = new Color(0.15f, 0.15f, 0.2f, 1f);
+
+    [Tooltip("悬停背景颜色")]
+    [SerializeField] private Color styledHoverColor = new Color(0.25f, 0.25f, 0.35f, 1f);
+
+    [Tooltip("按下背景颜色")]
+    [SerializeField] private Color styledPressColor = new Color(0.1f, 0.3f, 0.2f, 1f);
+
+    [Tooltip("常态文字颜色")]
+    [SerializeField] private Color styledNormalTextColor = new Color(0.7f, 0.9f, 0.7f, 1f);
+
+    [Tooltip("悬停文字颜色")]
+    [SerializeField] private Color styledHoverTextColor = new Color(0.9f, 1f, 0.9f, 1f);
+
+    [Tooltip("是否启用发光边框")]
+    [SerializeField] private bool styledGlowOutline = false;
+
     // ── 弹窗栈 ──────────────────────────────────────────────────
     private readonly Stack<ModalEntry> _modalStack = new();
     private Tween _currentAnim;
@@ -68,6 +101,33 @@ public class ModalSystem : MonoBehaviour
         // 清理旧状态（场景切换时，panel 已随场景销毁）
         _currentAnim?.Kill();
         _modalStack.Clear();
+    }
+
+    /// <summary>
+    /// 运行时批量配置按钮样式（供 MemorySceneSetup 等场景 Setup 脚本调用）。
+    /// </summary>
+    public void ConfigureButtonStyle(
+        bool?    enabled      = null,
+        Vector2? size         = null,
+        float?   hoverScale   = null,
+        float?   pressScale   = null,
+        Color?   normalBg     = null,
+        Color?   hoverBg      = null,
+        Color?   pressBg      = null,
+        Color?   normalText   = null,
+        Color?   hoverText    = null,
+        bool?    glow         = null)
+    {
+        if (enabled.HasValue)    useStyledButtons       = enabled.Value;
+        if (size.HasValue)       styledButtonSize       = size.Value;
+        if (hoverScale.HasValue) styledHoverScale       = hoverScale.Value;
+        if (pressScale.HasValue) styledPressScale       = pressScale.Value;
+        if (normalBg.HasValue)   styledNormalColor      = normalBg.Value;
+        if (hoverBg.HasValue)    styledHoverColor       = hoverBg.Value;
+        if (pressBg.HasValue)    styledPressColor       = pressBg.Value;
+        if (normalText.HasValue) styledNormalTextColor   = normalText.Value;
+        if (hoverText.HasValue)  styledHoverTextColor    = hoverText.Value;
+        if (glow.HasValue)       styledGlowOutline       = glow.Value;
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -132,6 +192,9 @@ public class ModalSystem : MonoBehaviour
         if (bodyTMP != null)  bodyTMP.text = body;
         if (btnText != null)  btnText.text = buttonText;
 
+        // 应用按钮样式
+        if (btn != null) ApplyStyledButton(btn.gameObject);
+
         // 关闭动作——按钮和键盘共用同一个闭包，保证幂等
         bool closed = false;
         Action doClose = () =>
@@ -180,6 +243,10 @@ public class ModalSystem : MonoBehaviour
         var noBtn  = panel.transform.Find("NoButton")?.GetComponent<Button>();
 
         if (msgTMP != null) msgTMP.text = message;
+
+        // 应用按钮样式
+        if (yesBtn != null) ApplyStyledButton(yesBtn.gameObject);
+        if (noBtn != null)  ApplyStyledButton(noBtn.gameObject);
 
         // 幂等回调
         bool decided = false;
@@ -456,6 +523,35 @@ public class ModalSystem : MonoBehaviour
         tmp.color = new Color(0.7f, 0.9f, 0.7f);
         tmp.alignment = TextAlignmentOptions.Center;
         ApplyChineseFont(tmp);
+
+        // 应用样式
+        ApplyStyledButton(go);
+    }
+
+    // ── 按钮样式应用 ─────────────────────────────────────────────
+
+    /// <summary>
+    /// 为指定按钮 GameObject 添加/配置 StyledButton 组件。
+    /// 使用当前 ModalSystem 中的样式参数。
+    /// </summary>
+    private void ApplyStyledButton(GameObject btnGO)
+    {
+        if (!useStyledButtons || btnGO == null) return;
+
+        var styled = btnGO.GetComponent<StyledButton>();
+        if (styled == null)
+            styled = btnGO.AddComponent<StyledButton>();
+
+        styled.ApplyStyle(
+            size:           styledButtonSize != Vector2.zero ? styledButtonSize : null,
+            normalBg:       styledNormalColor,
+            hoverBg:        styledHoverColor,
+            pressBg:        styledPressColor,
+            normalText:     styledNormalTextColor,
+            hoverText:      styledHoverTextColor,
+            hoverScaleVal:  styledHoverScale,
+            pressScaleVal:  styledPressScale,
+            glow:           styledGlowOutline);
     }
 
     // ── 中文字体 ─────────────────────────────────────────────────

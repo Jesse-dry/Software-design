@@ -26,6 +26,13 @@ public class MemoryFragmentNode : MemoryNodeBase
     [TextArea(3, 10)]
     public string fragmentBody = "一段模糊的记忆浮上心头……";
 
+    [Header("== 交互文字 ==")]
+    [Tooltip("玩家靠近时显示的交互提示文字（如 '按 E 交互'）")]
+    public string interactPromptText = "按 E 交互";
+
+    [Tooltip("弹窗关闭按钮文字")]
+    public string modalCloseButtonText = "关闭";
+
     [Tooltip("提示文字偏移（相对自身 transform.position）")]
     public Vector3 promptOffset = new Vector3(0, 1.5f, 0);
 
@@ -40,11 +47,6 @@ public class MemoryFragmentNode : MemoryNodeBase
     public static bool IsCollected(string id)
     {
         return !string.IsNullOrEmpty(id) && s_collectedFragmentIds.Contains(id);
-    }
-
-    public static int GetCollectedCount()
-    {
-        return s_collectedFragmentIds.Count;
     }
 
     public void SetFragmentId(string id)
@@ -73,7 +75,7 @@ public class MemoryFragmentNode : MemoryNodeBase
         var modal = UIManager.Instance?.Modal;
         if (modal != null)
         {
-            modal.ShowText(fragmentTitle, fragmentBody, "关闭", OnClosed);
+            modal.ShowText(fragmentTitle, fragmentBody, modalCloseButtonText, OnClosed);
         }
         else
         {
@@ -106,24 +108,10 @@ public class MemoryFragmentNode : MemoryNodeBase
         _playerMovement?.Unfreeze();
         _playerInteraction?.ReturnToFree();
 
-        // ② 更新碎片计数
+        // ② 更新碎片计数（用于终点门判断）
         AbyssPortal.Instance?.CollectFragment();
 
-        // ③ 更新 MemoryHUD + Toast 反馈
-        var portal = AbyssPortal.Instance;
-        int cur = portal?.CurrentFragments ?? 0;
-        int req = portal?.RequiredFragments ?? 4;
-
-        // 更新 Prefab 中的碎片计数 HUD
-        if (MemoryHUD.Instance != null)
-        {
-            MemoryHUD.Instance.UpdateCount(cur, req);
-            MemoryHUD.Instance.PlayCollectPulse();
-        }
-
-        UIManager.Instance?.Toast?.Show($"拾取了记忆碎片（{cur}/{req}）");
-
-        // ④ 清理 + 销毁
+        // ③ 清理 + 销毁
         _playerInteraction?.NotifyNodeDestroyed(this);
         DestroyPrompt();
         Destroy(gameObject);
@@ -143,7 +131,7 @@ public class MemoryFragmentNode : MemoryNodeBase
         // 提示位置：必须在相机视野内，否则玩家看不到
         // 因为相机固定在原点，碎片逻辑位置（Y=3~15）大部分在视野外，
         // 所以提示文字需要显示在相机可视区域内。
-        ShowPrompt("按 E 交互", GetCameraVisiblePromptPosition());
+        ShowPrompt(interactPromptText, GetCameraVisiblePromptPosition());
     }
 
     /// <summary>
@@ -162,11 +150,11 @@ public class MemoryFragmentNode : MemoryNodeBase
                 return visual.position + promptOffset;
         }
 
-        // 回退：相机视野上方 40% 处居中
+        // 回退：相机视野上方，比例由 promptCameraYRatio 控制
         var cam = Camera.main;
         if (cam != null)
         {
-            float y = cam.transform.position.y + cam.orthographicSize * 0.4f;
+            float y = cam.transform.position.y + cam.orthographicSize * promptCameraYRatio;
             return new Vector3(0f, y, 0f);
         }
 

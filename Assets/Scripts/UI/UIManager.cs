@@ -160,6 +160,8 @@ public class UIManager : MonoBehaviour
         Transition?.Initialize();
         Toast?.Initialize();
 
+        PauseSystem.Initialize(canvasGO.transform);
+
         Debug.Log("[UIManager] 全局 UI 初始化完成（Transition + Toast）。");
     }
 

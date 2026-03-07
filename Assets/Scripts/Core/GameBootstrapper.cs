@@ -49,6 +49,9 @@ public static class GameBootstrapper
         
         // DataManager：数据管理（证据、话题等）
         CreateManager<DataManager>(root, "DataManager");
+
+        //ChaosManager：混乱值管理
+        CreateManager<ChaosManager>(root, "ChaosManager");
         
         // UIManager：UI 统一管理（跨场景持久）
         CreateManager<UIManager>(root, "UIManager", ui =>

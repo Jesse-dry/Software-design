@@ -5,7 +5,6 @@ using DG.Tweening;
 using TMPro;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 /// <summary>
 /// 模态弹窗系统（挂在 UIManager 上）。
@@ -45,9 +44,6 @@ public class ModalSystem : MonoBehaviour
     private readonly Stack<ModalEntry> _modalStack = new();
     private Tween _currentAnim;
 
-    // ── 中文字体缓存 ─────────────────────────────────────────────
-    private static TMP_FontAsset _chineseTmpFont;
-
     /// <summary>当前弹窗栈深度</summary>
     public int StackDepth => _modalStack.Count;
 
@@ -67,7 +63,12 @@ public class ModalSystem : MonoBehaviour
     //  初始化
     // ══════════════════════════════════════════════════════════════
 
-    public void Initialize() { }
+    public void Initialize()
+    {
+        // 清理旧状态（场景切换时，panel 已随场景销毁）
+        _currentAnim?.Kill();
+        _modalStack.Clear();
+    }
 
     // ══════════════════════════════════════════════════════════════
     //  键盘导航（核心：弹窗关闭的键盘入口在此统一处理）
@@ -461,36 +462,7 @@ public class ModalSystem : MonoBehaviour
 
     private static void ApplyChineseFont(TMP_Text tmp)
     {
-        var font = GetChineseTmpFont();
-        if (font != null) tmp.font = font;
-    }
-
-    private static TMP_FontAsset GetChineseTmpFont()
-    {
-        if (_chineseTmpFont != null) return _chineseTmpFont;
-
-        string[] candidates =
-        {
-            "Microsoft YaHei", "SimHei",
-            "PingFang SC", "Hiragino Sans GB",
-            "Noto Sans CJK SC", "Source Han Sans SC",
-            "Arial Unicode MS", "Arial"
-        };
-
-        var installed = new HashSet<string>(Font.GetOSInstalledFontNames(),
-                                            StringComparer.OrdinalIgnoreCase);
-        string chosen = candidates.FirstOrDefault(c => installed.Contains(c)) ?? "Arial";
-
-        var osFont = Font.CreateDynamicFontFromOSFont(chosen, 32);
-        _chineseTmpFont = TMP_FontAsset.CreateFontAsset(osFont);
-
-        if (_chineseTmpFont != null)
-        {
-            _chineseTmpFont.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-            Debug.Log($"[ModalSystem] TMP 中文字体: {chosen}");
-        }
-
-        return _chineseTmpFont;
+        ChineseFontProvider.ApplyFont(tmp);
     }
 
     private void OnDestroy()

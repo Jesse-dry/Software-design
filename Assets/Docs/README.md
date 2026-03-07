@@ -16,12 +16,12 @@ Assets/
 │   ├── Data/                   # 章节策划配置
 │   └── Example/                # 调用示例
 │
-├── Resources/                  # Unity 可加载资源（UIroot Prefab / Config）
+├── Resources/                  # Unity 可加载资源（Config）
 │   └── Config/
 │       └── GameBootConfig.asset
 │
 ├── Scenes/                     # 场景文件（含 MainMenu.Unity）
-├── Prefabs/                    # 预制体（UIroot 等）
+├── Prefabs/                    # 预制体（UISceneRoot Prefab 等）
 ├── Art/                        # 美术资源（主菜单素材位于 Art/UI/主菜单）
 ├── Audio/                      # 音频资源
 ├── Animations/                 # 动画资源
@@ -74,14 +74,22 @@ Assets/
     │      ↓ 找不到则用默认配置
     ├── 2. 创建 [MANAGERS] 根 GameObject + DontDestroyOnLoad
     ├── 3. 创建 DataManager       （数据管理）
-    ├── 4. 创建 SceneController   （注入场景名配置）
-    └── 5. 创建 GameManager       （注入起始阶段）
+    ├── 4. 创建 UIManager         （+ 子系统组件）
+    │      └─ InitializeGlobalUI()
+    │           ├─ 创建 GlobalCanvas（Toast + Transition 层）
+    │           ├─ TransitionSystem.Initialize()
+    │           └─ ToastSystem.Initialize()
+    ├── 5. 创建 SceneController   （注入场景名配置）
+    └── 6. 创建 GameManager       （注入起始阶段）
             │
             └─ Start() → EnterPhase(startPhase)
                             │
                             ├─ Boot → 自动跳转 MainMenu
                             ├─ MainMenu → LoadMainMenu()
+                            │     └─ UISceneRoot.Awake() → RegisterSceneRoot()
+                            │           → HUD / Modal / Dialogue / ItemDisplay.Initialize()
                             ├─ Memory → LoadMemory()
+                            │     └─ UISceneRoot.Awake() → RegisterSceneRoot() ...
                             └─ ... 其他阶段
 ```
 
@@ -156,21 +164,40 @@ CourtController.Start()
 
 ---
 
-### 4. UI — UI 交互层（主菜单重构说明）
+### 4. UI — UI 交互层
 
 > 路径：`Assets/Scripts/UI/`
 
+**架构：场景专属 UISceneRoot + 全局覆盖层**
+
+```
+[MANAGERS] (DontDestroyOnLoad)
+  └─ UIManager
+      └─ GlobalCanvas (sortOrder ≥ 1000)
+           ├─ ToastLayer      (1050) — 跨场景浮动提示
+           └─ TransitionLayer (1100) — 跨场景转场遮罩
+
+Scene
+  └─ UISceneRoot (美术定制 Prefab, Awake 时自动注册)
+       ├─ HUDLayer     (10)
+       ├─ OverlayLayer (50)
+       └─ ModalLayer   (90)
+```
+
 | 文件 | 职责 |
 |------|------|
-| `EyeTracker.cs` | 眼球注视效果组件 — 眼珠随鼠标方向平滑偏移；Inspector 可精调 `maxOffsetX/Y`、`followSpeed`、`centerOffset`（支持椭圆范围） |
-| `HoverRevealButton.cs` | 透明按钮悬停显示组件 — 鼠标悬停时渐显指定 `revealImage`；新增 `expandHitbox`/`hitboxPadding` 可扩大检测范围 |
-| `MainMenuController.cs` | 主菜单流程控制 — 将开始按钮事件路由为通过 `GameManager.EnterPhase()` 进入下一阶段；支持可选转场（`TransitionSystem`） |
-| `AsyncSceneLoader.cs` | 异步场景加载器（带进度条），保留用于大型场景加载 |
-| 旧特效脚本（已迁移到备份） | `ConsensusTitleEffect/TitleInteraction/ButtonHoverEffect/ButtonHover/FloatEffect` 等：若需要可从 `Assets/_Recovery/OldMainMenu/` 恢复 |
-
-说明要点：
-- 主菜单 UI 由运行时的 `UIManager`（`[MANAGERS]`）与场景内 Canvas 共同构成；`GameBootstrapper` 会创建跨场景的 `EventSystem` 并在场景加载时清理重复项，确保场景中始终只有一个有效的 `EventSystem`。
-- 旧主菜单资源已经被移动到 `Assets/_Recovery/OldMainMenu/`，以防回滚需求。
+| `UIManager.cs` | **UI 单例管理器**。管理全局 Canvas（Toast + Transition）+ 场景根注册。层访问属性自动路由到全局或场景层。 |
+| `UISceneRoot.cs` | **场景 UI 根节点**（新增）。挂在每个场景的 Canvas 上，Awake 时注册到 UIManager，OnDestroy 注销。美术每场景维护一个独立 Prefab。 |
+| `TransitionSystem.cs` | 转场系统（全局 TransitionLayer），FadeBlack / FadeWhite / GlitchFade |
+| `ToastSystem.cs` | 浮动提示（全局 ToastLayer），支持 FadeSlideUp / TypewriterFade / GlitchFlash |
+| `ModalSystem.cs` | 模态弹窗（场景 ModalLayer），文本 / 确认 / 自定义 Prefab，三种入场动画 |
+| `HUDSystem.cs` | HUD 数值条 + 状态灯（场景 HUDLayer），场景切换时自动清理旧绑定 |
+| `DialoguePlayer.cs` | 对话播放器（场景 ModalLayer），打字机效果，场景切换时重建面板 |
+| `ItemDisplaySystem.cs` | 道具展示（场景 OverlayLayer），收集数据跨场景持久，UI 面板随场景重建 |
+| `TextEffectPlayer.cs` | 文字特效组件（打字机 / Decode / Glitch / Wave 等） |
+| `EyeTracker.cs` | 眼球注视效果组件 |
+| `HoverRevealButton.cs` | 透明按钮悬停显示组件 |
+| `MainMenuController.cs` | 主菜单流程控制 |
 ---
 
 ### 5. Animations — 动画 & 场景过渡层

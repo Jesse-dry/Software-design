@@ -73,6 +73,12 @@ public class HUDSystem : MonoBehaviour
 
     public void Initialize()
     {
+        // 清理旧状态（场景切换时会重新初始化）
+        valueBars.Clear();
+        indicators.Clear();
+        hudRoot = null;
+        hudCanvasGroup = null;
+
         var hudLayer = UIManager.Instance?.hudLayer;
         if (hudLayer == null) return;
 
@@ -299,6 +305,7 @@ public class HUDSystem : MonoBehaviour
         tmp.fontSize = 18;
         tmp.color = deltaTextColor;
         tmp.alignment = TextAlignmentOptions.Center;
+        ChineseFontProvider.ApplyFont(tmp);
 
         var cg = go.AddComponent<CanvasGroup>();
         DOTween.Sequence()

@@ -574,8 +574,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f450393e0a2bfb40ade05021207bc8c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EyeTracker
-  maxOffsetX: 16
-  maxOffsetY: 16
+  maxOffsetX: 20
+  maxOffsetY: 20
   followSpeed: 10.1
   centerOffset: {x: 46, y: -160}
   drawGizmos: 1

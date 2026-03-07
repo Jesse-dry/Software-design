@@ -1,8 +1,124 @@
-**UI 管理器 & 本次构建说明**
+**UI 管理器 & 架构说明（路线 A — 场景专属 UISceneRoot + 全局覆盖层）**
 
-- 用途：记录本次新增/修改的 UI 相关模块、用法示例、Inspector 暴露项、以及模块回滚（按文件级）步骤，便于代码审核与快速回退。
+- 用途：记录 UI 模块架构、各组件用法、Inspector 暴露项、美术工作流与回滚步骤。
 
-**新增/修改总览**
+---
+
+## 架构总览
+
+```
+┌─────────── [MANAGERS] (DontDestroyOnLoad) ──────────────────┐
+│  UIManager（纯服务单例）                                     │
+│    └─ GlobalCanvas (sortOrder ≥ 1000, ScreenSpace-Overlay)  │
+│         ├─ ToastLayer      (sortOrder = 1050)               │
+│         └─ TransitionLayer (sortOrder = 1100)               │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────── Scene（随场景加载 / 卸载） ──────────────────────┐
+│  UISceneRoot（每个场景独立 Prefab，美术可定制）              │
+│    ├─ HUDLayer      (sortOrder = 10)                        │
+│    ├─ OverlayLayer  (sortOrder = 50)                        │
+│    └─ ModalLayer    (sortOrder = 90)                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**核心原则：**
+- **全局层**（Toast、Transition）跨场景持久，由 UIManager 在 Boot 时创建。
+- **场景层**（HUD、Overlay、Modal）随场景生灭，由 `UISceneRoot` 在 `Awake` 时自动注册到 UIManager。
+- 美术为每个场景维护一个独立的 UISceneRoot Prefab，互不干扰。
+- 子系统（HUD / Modal / Dialogue / ItemDisplay）在场景根注册时自动重新初始化。
+
+---
+
+## Prefab 模板工作流（场景专属 UISceneRoot）
+
+每个场景（除 MainMenu 外）通过 Editor 工具一键生成专属 `UISceneRoot` Prefab。
+
+### 快速开始
+
+1. **生成 Prefab：** Unity 菜单 → `Tools → UI → Generate All UISceneRoot Prefabs`
+2. **输出目录：** `Assets/Prefabs/UI/`
+3. **拖入场景：** 在场景 Hierarchy 中拖入对应 Prefab（如 `UIRoot_Memory`）
+4. **美术微调：** 双击 Prefab 进入 Prefab Mode，自由调整布局/颜色/大小
+
+### 已生成模板列表
+
+| 场景 | Prefab 名 | 类型 | 说明 |
+|------|-----------|------|------|
+| CutsceneScene | UIRoot_Cutscene | Minimal | 仅基础三层 |
+| Memory | UIRoot_Memory | Memory | 含碎片计数 HUD + 交互提示 |
+| Abyss | UIRoot_Abyss | Exploration | 含交互提示 |
+| Court | UIRoot_Court | Court | 含庭审状态栏 + 证据面板占位 |
+| 接水管 | UIRoot_PipePuzzle | MiniGame | 含计时器 + 结果面板占位 |
+| 机房 | UIRoot_ServerRoom | Exploration | 含交互提示 |
+| 水管房间 | UIRoot_PipeRoom | MiniGame | 含计时器 + 结果面板占位 |
+| 走廊v0.2 | UIRoot_Corridor | Exploration | 含交互提示 |
+
+### Memory 场景特殊说明
+
+- `UIRoot_Memory` 预置了 `FragmentCounter` 面板（右上角碎片计数显示）
+- 需在 Prefab 的 `FragmentCounter` 对象上挂载 `MemoryHUD` 脚本
+- `MemorySceneSetup` 会自动查找 `MemoryHUD` 并在运行时更新碎片计数
+- 碎片收集时自动播放脉冲动画 + Toast 通知
+
+### 美术修改 Prefab 的注意事项
+
+- **不要删除** HUDLayer / OverlayLayer / ModalLayer 三个层节点
+- **不要修改** UISceneRoot 组件的引用映射
+- 可自由添加/修改层内的子对象
+- 用 Canvas 的 `overrideSorting` 控制子层排序
+- 场景层 sortingOrder 不要超过 1000（全局层使用 1000+）
+- ModalBackground 子对象已预置，美术可调整颜色透明度
+
+---
+
+## 中文字体方案
+
+### 统一字体服务：ChineseFontProvider
+
+所有 UI 子系统已统一使用 `ChineseFontProvider`，无需各系统单独处理字体。
+
+**覆盖范围：**
+- ModalSystem（弹窗文字）
+- ToastSystem（浮动提示）
+- DialoguePlayer（对话文字）
+- HUDSystem（数值飘字）
+- ItemDisplaySystem（道具面板）
+- MemoryNodeBase（世界空间提示文字）
+- MemoryHUD（碎片计数文字）
+
+### 字体加载优先级
+
+1. **Resources 加载**（推荐生产环境）：`Resources/Fonts/ChineseTMP`（TMP_FontAsset）
+2. **TMP Settings 默认字体**：如果默认字体支持中文则使用
+3. **OS 动态创建**（开发期回退）：按优先级尝试微软雅黑 → 黑体 → 思源黑体 → Arial
+
+### 美术配置步骤
+
+1. 准备中文字体文件（推荐 [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC) 或思源黑体）
+2. 放到 `Assets/Fonts/` 目录
+3. 菜单 `Window → TextMeshPro → Font Asset Creator`
+   - Source Font File: 你的 .ttf
+   - Atlas Resolution: **4096 × 4096**
+   - Atlas Population Mode: **Dynamic**
+   - Character Set: **Unicode Range**
+   - Unicode Range: `20-7E,2000-206F,3000-303F,4E00-9FFF,FF00-FFEF`
+4. Save 到 `Assets/Resources/Fonts/ChineseTMP.asset`
+5. （可选）在 TMP Settings 中设为默认字体
+
+### 验证工具
+
+- `Tools → UI → Setup Chinese TMP Font (Help)` — 配置步骤提示
+- `Tools → UI → Validate Chinese Font Setup` — 检查字体配置状态
+
+### 旧版字体（世界空间 TextMesh）
+
+Memory 场景的交互提示使用 TextMesh（非 TMP）。字体同样由 `ChineseFontProvider` 管理。
+可选：放一个 .ttf 到 `Assets/Resources/Fonts/ChineseFont`。
+
+---
+
+## 模块清单
 - **新增（跨场景持久 / 放在 [MANAGERS] 下）**：
   - **UI 统一管理器：** [Assets/Scripts/UI/UIManager.cs](Assets/Scripts/UI/UIManager.cs)
     - 说明：单例，DontDestroyOnLoad，管理 4 层 Canvas（HUD/Overlay/Modal/Transition）并暴露子系统引用。

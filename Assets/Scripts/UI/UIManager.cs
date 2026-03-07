@@ -6,56 +6,81 @@ using System;
 /// <summary>
 /// UI 统一管理器（跨场景持久 — 挂在 [MANAGERS] 下）。
 /// 
-/// 架构：
-///   UIManager 负责管理一个 DontDestroyOnLoad 的 UIRoot Canvas，
-///   下辖多个功能层，按渲染顺序从低到高：
-///     HUD (10) → Overlay (50) → Modal (90) → Transition (100)
+/// 架构（路线 A — 场景专属 UISceneRoot + 全局覆盖层）：
 /// 
-///   各子系统以组件形式挂在 UIManager 上，通过 Inspector 引用各层 Transform。
-///   场景内独有的 UI 仍放在各场景 Canvas 中，不受此管理器控制。
+///   ┌─────────── [MANAGERS] (DontDestroyOnLoad) ──────────────────┐
+///   │  UIManager                                                  │
+///   │    └─ GlobalCanvas (sortOrder ≥ 1000, ScreenSpace-Overlay) │
+///   │         ├─ ToastLayer      (sortOrder = 1050)              │
+///   │         └─ TransitionLayer (sortOrder = 1100)              │
+///   └────────────────────────────────────────────────────────────┘
 /// 
-/// 使用方式：
+///   ┌─────────── Scene（随场景加载 / 卸载） ──────────────────────┐
+///   │  UISceneRoot（美术定制的 Prefab）                           │
+///   │    ├─ HUDLayer      (sortOrder = 10)                       │
+///   │    ├─ OverlayLayer  (sortOrder = 50)                       │
+///   │    └─ ModalLayer    (sortOrder = 90)                       │
+///   └────────────────────────────────────────────────────────────┘
+/// 
+///   UISceneRoot 在 Awake 时自动向 UIManager 注册，OnDestroy 时注销。
+///   美术可为每个场景制作独立的 UISceneRoot Prefab，自由定制层内容与布局。
+/// 
+/// 使用方式（对外不变）：
 ///   UIManager.Instance.Toast.Show("拾取了记忆碎片");
-///   UIManager.Instance.Modal.Open(somePrefab);
+///   UIManager.Instance.Modal.ShowText("标题", "正文");
 ///   UIManager.Instance.Transition.FadeIn(1f);
 ///   UIManager.Instance.HUD.SetChaosValue(0.7f);
 /// 
 /// 初始化：
-///   由 GameBootstrapper 创建并加载 UIRoot Prefab（Resources/Prefabs/UIRoot）。
+///   由 GameBootstrapper 创建 UIManager 并调用 InitializeGlobalUI()。
+///   场景子系统在 UISceneRoot 注册时自动初始化。
 /// </summary>
 public class UIManager : MonoBehaviour
 {
     // ── 单例 ─────────────────────────────────────────────────────
     public static UIManager Instance { get; private set; }
 
-    // ── UIRoot Prefab 路径 ───────────────────────────────────────
-    private const string UI_ROOT_PREFAB_PATH = "Prefabs/UIRoot";
+    // ── 全局 Canvas 配置 ─────────────────────────────────────────
+    [Header("== 全局 Canvas ==")]
+    [Tooltip("全局 Canvas sortingOrder 基线（场景 Canvas 建议低于此值）")]
+    [SerializeField] private int globalCanvasSortOrder = 1000;
 
-    // ── 层引用（由 UIRoot Prefab 结构决定，Bootstrapper 创建后赋值） ──
-    [Header("== UI 层引用 ==")]
-    [Tooltip("最底层：数值条、状态灯、Toast 容器")]
-    public RectTransform hudLayer;
+    // ── 全局层引用（DDOL，InitializeGlobalUI 创建） ─────────────
+    private RectTransform _globalToastLayer;
+    private RectTransform _globalTransitionLayer;
 
-    [Tooltip("中间层：道具面板、暂停菜单等可叠加面板")]
-    public RectTransform overlayLayer;
+    // ── 当前场景根（由 UISceneRoot 注册 / 注销） ────────────────
+    private UISceneRoot _currentSceneRoot;
 
-    [Tooltip("模态层：黑色背景 + 对话/弹窗（打断游戏交互）")]
-    public RectTransform modalLayer;
+    // ── 层访问器（子系统统一通过这些属性获取目标层） ─────────────
+    /// <summary>场景 HUD 层（数值条、状态灯等，随场景切换）</summary>
+    public RectTransform hudLayer =>
+        _currentSceneRoot != null ? _currentSceneRoot.hudLayer : null;
 
-    [Tooltip("最上层：场景过渡（淡入淡出/Glitch）")]
-    public RectTransform transitionLayer;
+    /// <summary>场景 Overlay 层（道具面板、暂停菜单等，随场景切换）</summary>
+    public RectTransform overlayLayer =>
+        _currentSceneRoot != null ? _currentSceneRoot.overlayLayer : null;
+
+    /// <summary>场景 Modal 层（对话弹窗、确认框，随场景切换）</summary>
+    public RectTransform modalLayer =>
+        _currentSceneRoot != null ? _currentSceneRoot.modalLayer : null;
+
+    /// <summary>全局 Transition 层（场景过渡，跨场景持久）</summary>
+    public RectTransform transitionLayer => _globalTransitionLayer;
+
+    /// <summary>全局 Toast 层（浮动提示，跨场景持久）</summary>
+    public RectTransform toastLayer => _globalToastLayer;
 
     // ── 模态背景 ─────────────────────────────────────────────────
     [Header("== 模态背景 ==")]
-    [Tooltip("ModalLayer 下的全屏黑色 Image（带 RaycastTarget 阻断输入）")]
-    public Image modalBackground;
-
     [Tooltip("模态背景目标透明度")]
     [Range(0f, 1f)]
     public float modalBgAlpha = 0.75f;
 
     [Tooltip("模态背景淡入时间")]
     public float modalBgFadeDuration = 0.3f;
+
+    private Image _modalBackground;
 
     // ── 子系统引用（在 UIManager GameObject 上作为组件挂载） ─────
     [Header("== 子系统 ==")]
@@ -72,6 +97,15 @@ public class UIManager : MonoBehaviour
 
     /// <summary>模态打开/关闭事件（true=打开，false=关闭）</summary>
     public event Action<bool> OnModalStateChanged;
+
+    /// <summary>场景根注册事件（场景子系统可监听以执行额外初始化）</summary>
+    public event Action<UISceneRoot> OnSceneRootRegistered;
+
+    /// <summary>场景根注销事件</summary>
+    public event Action OnSceneRootUnregistered;
+
+    /// <summary>当前是否有场景根注册</summary>
+    public bool HasSceneRoot => _currentSceneRoot != null;
 
     // ══════════════════════════════════════════════════════════════
     //  生命周期
@@ -93,47 +127,87 @@ public class UIManager : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  Bootstrapper 调用：加载 UIRoot Prefab
+    //  全局 UI 初始化（Bootstrapper 调用，仅执行一次）
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// 从 Resources 加载 UIRoot Prefab 并实例化为 UIManager 的子对象。
-    /// 如果 Prefab 不存在则创建最小化的运行时 UI 结构。
+    /// 创建跨场景持久的全局 Canvas（Transition + Toast 层）。
+    /// 由 GameBootstrapper 在创建 UIManager 后调用。
     /// </summary>
-    public void InitializeUIRoot()
+    public void InitializeGlobalUI()
     {
-        var prefab = Resources.Load<GameObject>(UI_ROOT_PREFAB_PATH);
-        if (prefab != null)
-        {
-            var root = Instantiate(prefab, transform);
-            root.name = "UIRoot";
-            BindLayersFromRoot(root.transform);
-            Debug.Log("[UIManager] UIRoot Prefab 加载成功。");
-        }
-        else
+        // ── 全局 Canvas ──
+        var canvasGO = new GameObject("GlobalCanvas");
+        canvasGO.transform.SetParent(transform, false);
+        var canvas = canvasGO.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = globalCanvasSortOrder;
+        var scaler = canvasGO.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight = 0.5f;
+        canvasGO.AddComponent<GraphicRaycaster>();
+
+        // ── Toast 层（全局，跨场景） ──
+        _globalToastLayer = CreateLayer(canvasGO.transform, "ToastLayer",
+            globalCanvasSortOrder + 50);
+
+        // ── Transition 层（全局，跨场景） ──
+        _globalTransitionLayer = CreateLayer(canvasGO.transform, "TransitionLayer",
+            globalCanvasSortOrder + 100);
+
+        // ── 初始化全局子系统（Transition + Toast） ──
+        Transition?.Initialize();
+        Toast?.Initialize();
+
+        Debug.Log("[UIManager] 全局 UI 初始化完成（Transition + Toast）。");
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  场景根注册 / 注销（由 UISceneRoot 自动调用）
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 注册当前场景的 UISceneRoot。由 UISceneRoot.Awake() 自动调用。
+    /// 触发场景相关子系统（HUD、Modal、Dialogue、ItemDisplay）的初始化。
+    /// </summary>
+    public void RegisterSceneRoot(UISceneRoot root)
+    {
+        if (root == null) return;
+
+        if (_currentSceneRoot != null && _currentSceneRoot != root)
         {
             Debug.LogWarning(
-                "[UIManager] 未找到 UIRoot Prefab，创建运行时最小 UI 结构。\n" +
-                $"建议创建 Prefab：Assets/Resources/{UI_ROOT_PREFAB_PATH}.prefab");
-            CreateRuntimeUIRoot();
+                $"[UIManager] 替换场景根: {_currentSceneRoot.name} → {root.name}");
         }
 
-        // 初始隐藏模态背景
-        if (modalBackground != null)
-        {
-            var c = modalBackground.color;
-            c.a = 0f;
-            modalBackground.color = c;
-            modalBackground.gameObject.SetActive(false);
-        }
+        _currentSceneRoot = root;
 
-        // 让子系统执行各自初始化
-        Transition?.Initialize();
-        Modal?.Initialize();
-        Toast?.Initialize();
+        // 绑定/创建模态背景
+        SetupModalBackground();
+
+        // 初始化场景子系统
         HUD?.Initialize();
+        Modal?.Initialize();
         Dialogue?.Initialize();
         ItemDisplay?.Initialize();
+
+        OnSceneRootRegistered?.Invoke(root);
+        Debug.Log($"[UIManager] 场景根已注册: {root.name}");
+    }
+
+    /// <summary>
+    /// 注销场景根。由 UISceneRoot.OnDestroy() 自动调用。
+    /// </summary>
+    public void UnregisterSceneRoot(UISceneRoot root)
+    {
+        if (_currentSceneRoot != root) return;
+
+        _currentSceneRoot = null;
+        _modalBackground = null;
+
+        OnSceneRootUnregistered?.Invoke();
+        Debug.Log($"[UIManager] 场景根已注销: {root.name}");
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -146,10 +220,10 @@ public class UIManager : MonoBehaviour
         IsModalOpen = true;
         OnModalStateChanged?.Invoke(true);
 
-        if (modalBackground != null)
+        if (_modalBackground != null)
         {
-            modalBackground.gameObject.SetActive(true);
-            modalBackground.DOFade(modalBgAlpha, modalBgFadeDuration)
+            _modalBackground.gameObject.SetActive(true);
+            _modalBackground.DOFade(modalBgAlpha, modalBgFadeDuration)
                 .SetUpdate(true)
                 .OnComplete(() => onComplete?.Invoke());
         }
@@ -162,13 +236,13 @@ public class UIManager : MonoBehaviour
     /// <summary>隐藏模态背景</summary>
     public void HideModalBackground(Action onComplete = null)
     {
-        if (modalBackground != null)
+        if (_modalBackground != null)
         {
-            modalBackground.DOFade(0f, modalBgFadeDuration)
+            _modalBackground.DOFade(0f, modalBgFadeDuration)
                 .SetUpdate(true)
                 .OnComplete(() =>
                 {
-                    modalBackground.gameObject.SetActive(false);
+                    _modalBackground.gameObject.SetActive(false);
                     IsModalOpen = false;
                     OnModalStateChanged?.Invoke(false);
                     onComplete?.Invoke();
@@ -183,36 +257,44 @@ public class UIManager : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  运行时最小 UI 创建（Prefab 缺失时回退）
+    //  模态背景初始化（场景根注册时调用）
     // ══════════════════════════════════════════════════════════════
 
-    private void CreateRuntimeUIRoot()
+    private void SetupModalBackground()
     {
-        // Canvas
-        var canvasGO = new GameObject("UIRoot");
-        canvasGO.transform.SetParent(transform, false);
-        var canvas = canvasGO.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 0;
-        canvasGO.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        canvasGO.AddComponent<GraphicRaycaster>();
+        if (modalLayer == null) return;
 
-        // 创建层
-        hudLayer       = CreateLayer(canvasGO.transform, "HUDLayer", 10);
-        overlayLayer   = CreateLayer(canvasGO.transform, "OverlayLayer", 50);
-        modalLayer     = CreateLayer(canvasGO.transform, "ModalLayer", 90);
-        transitionLayer = CreateLayer(canvasGO.transform, "TransitionLayer", 100);
+        // 优先查找 UISceneRoot Prefab 中已有的 ModalBackground
+        var existing = modalLayer.Find("ModalBackground");
+        if (existing != null)
+        {
+            _modalBackground = existing.GetComponent<Image>();
+        }
+        else
+        {
+            // 运行时创建默认版本
+            var bgGO = new GameObject("ModalBackground");
+            bgGO.transform.SetParent(modalLayer, false);
+            bgGO.transform.SetAsFirstSibling();
+            _modalBackground = bgGO.AddComponent<Image>();
+            _modalBackground.color = new Color(0f, 0f, 0f, 0f);
+            _modalBackground.raycastTarget = true;
+            StretchFull(bgGO.GetComponent<RectTransform>());
+        }
 
-        // 模态背景
-        var bgGO = new GameObject("ModalBackground");
-        bgGO.transform.SetParent(modalLayer, false);
-        bgGO.transform.SetAsFirstSibling();
-        modalBackground = bgGO.AddComponent<Image>();
-        modalBackground.color = new Color(0f, 0f, 0f, 0f);
-        modalBackground.raycastTarget = true;
-        var bgRect = bgGO.GetComponent<RectTransform>();
-        StretchFull(bgRect);
+        // 初始隐藏
+        if (_modalBackground != null)
+        {
+            var c = _modalBackground.color;
+            c.a = 0f;
+            _modalBackground.color = c;
+            _modalBackground.gameObject.SetActive(false);
+        }
     }
+
+    // ══════════════════════════════════════════════════════════════
+    //  工具方法（供运行时创建 UI 结构）
+    // ══════════════════════════════════════════════════════════════
 
     private RectTransform CreateLayer(Transform parent, string name, int sortOrder)
     {
@@ -236,36 +318,5 @@ public class UIManager : MonoBehaviour
         rect.anchorMax = Vector2.one;
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
-    }
-
-    /// <summary>
-    /// 从已实例化的 UIRoot Prefab 中按名称绑定各层。
-    /// Prefab 结构要求：UIRoot/HUDLayer, UIRoot/OverlayLayer, UIRoot/ModalLayer, UIRoot/TransitionLayer
-    /// </summary>
-    private void BindLayersFromRoot(Transform root)
-    {
-        hudLayer        = FindChildRect(root, "HUDLayer");
-        overlayLayer    = FindChildRect(root, "OverlayLayer");
-        modalLayer      = FindChildRect(root, "ModalLayer");
-        transitionLayer = FindChildRect(root, "TransitionLayer");
-
-        // 模态背景
-        if (modalLayer != null)
-        {
-            var bgTrans = modalLayer.Find("ModalBackground");
-            if (bgTrans != null)
-                modalBackground = bgTrans.GetComponent<Image>();
-        }
-    }
-
-    private static RectTransform FindChildRect(Transform root, string childName)
-    {
-        var child = root.Find(childName);
-        if (child == null)
-        {
-            Debug.LogWarning($"[UIManager] UIRoot 中未找到 '{childName}'，请检查 Prefab 结构。");
-            return null;
-        }
-        return child.GetComponent<RectTransform>();
     }
 }

@@ -234,7 +234,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66c26286fae071c44848032799b2c028, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InteractionPromptUI
-  promptRoot: {fileID: 1292313248}
 --- !u!1 &173238541
 GameObject:
   m_ObjectHideFlags: 0
@@ -489,7 +488,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AbyssPortal
   requiredFragments: 2
-  promptOffset: {x: 0, y: 1.5, z: 0}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -742,9 +740,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a9014a5d8b8b03e4885cc934dfa4a717, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MemoryUIManager
-  memoryPanel: {fileID: 1245731975}
-  memoryText: {fileID: 1068283783}
-  playerMovement: {fileID: 0}
 --- !u!1 &542058120
 GameObject:
   m_ObjectHideFlags: 0
@@ -1120,6 +1115,108 @@ MonoBehaviour:
   fragmentTitle: "\u8BB0\u5FC6\u788E\u7247"
   fragmentBody: "\u4E00\u6BB5\u6A21\u7CCA\u7684\u8BB0\u5FC6\u6D6E\u4E0A\u5FC3\u5934\u2026\u2026"
   promptOffset: {x: 0, y: 1.5, z: 0}
+  fragmentId: fragment_1
+--- !u!1001 &805654711
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3826014378160015121, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6175845865755500241, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_Name
+      value: UIRoot_Memory
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6839747750721014374, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 50487cd247d32ae43afe1295a62f926f, type: 3}
 --- !u!1 &814291999
 GameObject:
   m_ObjectHideFlags: 0
@@ -1493,24 +1590,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6756551b1eb8ba43a36eacb6d2315d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
-  interactAction:
-    m_Name: Interact
-    m_Type: 1
-    m_ExpectedControlType: Button
-    m_Id: e89ba543-65a9-4257-a221-322de9419b7c
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings:
-    - m_Name: 
-      m_Id: 78aa2c3c-ed92-41aa-85fa-29150e429204
-      m_Path: <Keyboard>/e
-      m_Interactions: 
-      m_Processors: 
-      m_Groups: 
-      m_Action: Interact
-      m_Flags: 0
-    m_Flags: 0
-  currentNode: {fileID: 0}
 --- !u!114 &854350913
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1523,7 +1602,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 180191d06da139a47871bbb89c76b2b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteractInput
-  interaction: {fileID: 0}
 --- !u!1 &1066236799
 GameObject:
   m_ObjectHideFlags: 0
@@ -1682,6 +1760,7 @@ MonoBehaviour:
   fragmentTitle: "\u8BB0\u5FC6\u788E\u7247"
   fragmentBody: "\u4E00\u6BB5\u6A21\u7CCA\u7684\u8BB0\u5FC6\u6D6E\u4E0A\u5FC3\u5934\u2026\u2026"
   promptOffset: {x: 0, y: 1.5, z: 0}
+  fragmentId: fragment_1
 --- !u!1 &1068283781
 GameObject:
   m_ObjectHideFlags: 0
@@ -2373,3 +2452,4 @@ SceneRoots:
   - {fileID: 346659541}
   - {fileID: 173238545}
   - {fileID: 2145480631}
+  - {fileID: 805654711}

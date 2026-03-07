@@ -106,6 +106,7 @@ public class GameManager : MonoBehaviour
             case GamePhase.Court:
                 Debug.Log("[GameManager] 离开 Court 阶段");
                 break;
+            
         }
     }
 
@@ -135,6 +136,10 @@ public class GameManager : MonoBehaviour
 
             case GamePhase.Abyss:
                 SceneController.Instance?.LoadAbyss();
+                break;
+
+            case GamePhase.DecodeGame:
+                SceneController.Instance?.LoadDecodeGame();
                 break;
 
             case GamePhase.Court:

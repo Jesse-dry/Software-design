@@ -42,23 +42,22 @@ public class PauseMenuUI : MonoBehaviour
     public void Show()
     {
         gameObject.SetActive(true);
-
-        // 【暴力测试】不要动画了，直接把透明度拉满！
-        _canvasGroup.alpha = 1f;
-        _canvasGroup.interactable = true;
-        _canvasGroup.blocksRaycasts = true;
-
-        Debug.Log("[PauseMenuUI] 强制显示菜单，Alpha已设为1");
+        // DOTween 的 SetUpdate(true) 可以完美无视 Time.timeScale = 0
+        _canvasGroup.DOFade(1f, fadeDuration).SetUpdate(true).OnComplete(() =>
+        {
+            _canvasGroup.interactable = true;
+            _canvasGroup.blocksRaycasts = true;
+        });
     }
 
     public void Hide()
     {
-        _canvasGroup.alpha = 0f;
         _canvasGroup.interactable = false;
         _canvasGroup.blocksRaycasts = false;
-        gameObject.SetActive(false);
-
-        Debug.Log("[PauseMenuUI] 强制隐藏菜单，Alpha已设为0");
+        _canvasGroup.DOFade(0f, fadeDuration).SetUpdate(true).OnComplete(() =>
+        {
+            gameObject.SetActive(false);
+        });
     }
 
     private void OnResumeClicked() => _onResumeCallback?.Invoke();

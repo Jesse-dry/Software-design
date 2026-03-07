@@ -132,7 +132,11 @@ public class ToastSystem : MonoBehaviour
         toast.transform.SetAsLastSibling();
 
         // 动画
-        var cg = toast.GetComponent<CanvasGroup>() ?? toast.AddComponent<CanvasGroup>();
+        var cg = toast.GetComponent<CanvasGroup>();
+        if (cg == null)
+        {
+            cg = toast.AddComponent<CanvasGroup>();
+        }
         var seq = AnimateToast(toast, cg, style, duration);
 
         var entry = new ActiveToast

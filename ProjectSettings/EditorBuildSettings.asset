@@ -35,6 +35,9 @@ EditorBuildSettings:
   - enabled: 1
     path: "Assets/Scenes/\u63A5\u6C34\u7BA1.unity"
     guid: 9a219b30f2374074d9c54591ef58e6fe
+  - enabled: 1
+    path: Assets/Scenes/DecodeGame.unity
+    guid: 753e6d99291b7db498a6ccd5d49a00a1
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

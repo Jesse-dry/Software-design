@@ -18,4 +18,5 @@ public enum GamePhase
     Abyss,      // 潜渊：包含接水管、走廊等子区域
     Court,      // 庭审：举证/辩论阶段
     Result,     // 结局：展示结果
+    DecodeGame,    //拷贝时的小游戏/
 }

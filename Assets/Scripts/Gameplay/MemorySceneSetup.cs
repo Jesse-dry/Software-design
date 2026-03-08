@@ -422,14 +422,61 @@ public class MemorySceneSetup : MonoBehaviour
             // 确保相机固定在原点，移除跟随脚本
             var oldFollow = cam.GetComponent<CameraFollow>();
             if (oldFollow != null) Destroy(oldFollow);
-            
+
             cam.transform.position = new Vector3(0f, 0f, -10f);
+
+            // 【Bug Fix】重置 Viewport Rect 为全屏。
+            // 从 Cutscene/VideoPlayer 场景过来时，主相机的 rect 可能被修改为非 (0,0,1,1)，
+            // 导致世界空间内容仅渲染在屏幕子区域，四周出现相机背景色（蓝色）空白边，
+            // 而 ScreenSpace-Overlay 的 UISceneRoot Canvas 仍然全屏，产生"两个画布不对齐"的效果。
+            cam.rect = new Rect(0f, 0f, 1f, 1f);
+        }
+
+        // ─── 6. 背景自适应缩放 ────────────────────────────────
+        // 根据主相机正交尺寸 + 屏幕宽高比自动撑满背景。
+        // Inspector 的 backgroundScale 作为额外倍率（保留微调能力，默认 1 = 刚好铺满不留边）。
+        if (cam != null && backgroundFrames != null && backgroundFrames.Length > 0
+            && backgroundFrames[0] != null)
+        {
+            FitBackgroundToCamera(bgSR, bgGO, cam);
         }
 
         Debug.Log("[MemorySceneSetup] 场景初始化完成 — Player/Background/Fragments/Portal 已创建。");
     }
 
 
+
+    /// <summary>
+    /// 自动计算背景 SpriteRenderer 的缩放，使其刚好铺满主相机正交视野。
+    /// 以"cover 模式"处理：取宽/高所需缩放的较大值，保证无黑边。
+    /// Inspector 的 backgroundScale 作为额外倍率叠加（> 1 可留安全边距）。
+    /// </summary>
+    private void FitBackgroundToCamera(SpriteRenderer sr, GameObject bgGO, Camera cam)
+    {
+        if (sr.sprite == null) return;
+
+        // 相机正交视野的世界空间尺寸
+        float camHalfHeight = cam.orthographicSize;
+        float camHalfWidth  = camHalfHeight * cam.aspect;
+
+        // Sprite 在 scale=1 时的世界空间半尺寸
+        Rect spriteRect = sr.sprite.rect;
+        float ppu        = sr.sprite.pixelsPerUnit;
+        float spriteHalfH = (spriteRect.height / ppu) * 0.5f;
+        float spriteHalfW = (spriteRect.width  / ppu) * 0.5f;
+
+        if (spriteHalfH <= 0f || spriteHalfW <= 0f) return;
+
+        // cover 模式：取两轴所需缩放的最大值，保证无黑边
+        float scaleH = camHalfHeight / spriteHalfH;
+        float scaleW = camHalfWidth  / spriteHalfW;
+        float autoScale = Mathf.Max(scaleH, scaleW);
+
+        // 叠加 Inspector 的额外倍率
+        bgGO.transform.localScale = Vector3.one * (autoScale * backgroundScale);
+
+        Debug.Log($"[MemorySceneSetup] 背景自适应缩放: autoScale={autoScale:F3} × Inspector={backgroundScale} = {autoScale * backgroundScale:F3}");
+    }
 
     /// <summary>
     /// 确保场景中有 EventSystem（UI 按钮点击必需）。

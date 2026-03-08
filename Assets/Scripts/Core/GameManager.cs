@@ -71,6 +71,16 @@ public class GameManager : MonoBehaviour
     // =========================
 
     /// <summary>
+    /// 重新加载当前阶段（退出 → 再进入，用于失败重置）。
+    /// </summary>
+    public void ReloadCurrentPhase()
+    {
+        Debug.Log($"[GameManager] 重载当前阶段: {CurrentPhase}");
+        ExitCurrentPhase();
+        EnterNewPhase();
+    }
+
+    /// <summary>
     /// 进入指定阶段（唯一合法的阶段切换入口）
     /// </summary>
     public void EnterPhase(GamePhase newPhase)
@@ -101,6 +111,26 @@ public class GameManager : MonoBehaviour
 
             case GamePhase.Abyss:
                 Debug.Log("[GameManager] 离开 Abyss 阶段");
+                break;
+
+            case GamePhase.Corridor:
+                Debug.Log("[GameManager] 离开 Corridor 阶段");
+                break;
+
+            case GamePhase.PipeRoom:
+                Debug.Log("[GameManager] 离开 PipeRoom 阶段");
+                break;
+
+            case GamePhase.PipePuzzle:
+                Debug.Log("[GameManager] 离开 PipePuzzle 阶段");
+                break;
+
+            case GamePhase.ServerRoom:
+                Debug.Log("[GameManager] 离开 ServerRoom 阶段");
+                break;
+
+            case GamePhase.DecodeGame:
+                Debug.Log("[GameManager] 离开 DecodeGame 阶段");
                 break;
 
             case GamePhase.Court:
@@ -138,12 +168,24 @@ public class GameManager : MonoBehaviour
                 SceneController.Instance?.LoadAbyss();
                 break;
 
-            case GamePhase.DecodeGame:
-                SceneController.Instance?.LoadDecodeGame();
-                break;
-
             case GamePhase.Corridor:
                 SceneController.Instance?.LoadCorridor();
+                break;
+
+            case GamePhase.PipeRoom:
+                SceneController.Instance?.LoadPipeRoom();
+                break;
+
+            case GamePhase.PipePuzzle:
+                SceneController.Instance?.LoadPipePuzzle();
+                break;
+
+            case GamePhase.ServerRoom:
+                SceneController.Instance?.LoadServerRoom();
+                break;
+
+            case GamePhase.DecodeGame:
+                SceneController.Instance?.LoadDecodeGame();
                 break;
 
             case GamePhase.Court:
@@ -179,5 +221,30 @@ public class GameManager : MonoBehaviour
     public bool IsInCourt()
     {
         return CurrentPhase == GamePhase.Court;
+    }
+
+    public bool IsInCorridor()
+    {
+        return CurrentPhase == GamePhase.Corridor;
+    }
+
+    public bool IsInPipeRoom()
+    {
+        return CurrentPhase == GamePhase.PipeRoom;
+    }
+
+    public bool IsInPipePuzzle()
+    {
+        return CurrentPhase == GamePhase.PipePuzzle;
+    }
+
+    public bool IsInServerRoom()
+    {
+        return CurrentPhase == GamePhase.ServerRoom;
+    }
+
+    public bool IsInDecodeGame()
+    {
+        return CurrentPhase == GamePhase.DecodeGame;
     }
 }

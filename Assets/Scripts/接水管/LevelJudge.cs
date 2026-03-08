@@ -95,26 +95,37 @@ public class LevelJudge : MonoBehaviour
     // ==========================================
     private IEnumerator VictoryAndTransition()
     {
-        // 1. 弹出胜利提示（绿色文字正面反馈）
-        if (UIManager.Instance != null && UIManager.Instance.Toast != null)
-        {
-            UIManager.Instance.Toast.Show("管线修复完毕！水压恢复正常！", colorType: ToastColor.Positive);
-        }
+        // 0. 停止倒计时器
+        var timer = FindAnyObjectByType<PipePuzzleTimer>();
+        if (timer != null) timer.StopTimer();
 
-        // 2. 停顿 2 秒，让玩家看看完整连通的水管，享受一下解密的快感
+        // 1. 弹出胜利提示
+        if (UIManager.Instance?.Toast != null)
+            UIManager.Instance.Toast.Show("管线修复完毕！水压恢复正常！", colorType: ToastColor.Positive);
+
+        // 2. 停顿 2 秒
         yield return new WaitForSeconds(2.0f);
 
-        // 3. 结算证据牌（之前配置里清洁工路线是 1 张牌）
-        GrantEvidenceCards(1);
+        // 3. 结算阿卡那牌 — 星币
+        if (AkanaManager.Instance != null)
+            AkanaManager.Instance.CollectCard(AkanaCardId.星币);
 
-        yield return new WaitForSeconds(1.0f); // 再稍微停顿一下让玩家看清拿到牌了
+        // 4. Toast 提示卡牌获得
+        if (UIManager.Instance?.Toast != null)
+            UIManager.Instance.Toast.Show("获得了【星币】阿卡那牌！", colorType: ToastColor.Positive);
 
-        // 4. 呼叫大管家，雷霆切入法庭！
-        if (GameManager.Instance != null)
-        {
-            Debug.Log("[LevelJudge] 准备完毕，进入 Court（法庭）场景！");
-            GameManager.Instance.EnterPhase(GamePhase.Court);
-        }
+        yield return new WaitForSeconds(1.0f);
+
+        // 5. 询问是否查看星币牌说明 → 关闭后返回走廊选角色
+        AkanaVictoryHelper.AskViewCard(
+            AkanaCardId.星币,
+            "恭喜获得【星币】阿卡那牌，是否查看牌面内容？",
+            onFinished: () =>
+            {
+                Debug.Log("[LevelJudge] 接水管通关，返回 Corridor SelectRole！");
+                SelectRoleController.ReturnToCorridorSelectRole();
+            }
+        );
     }
 
     /// <summary>
@@ -122,15 +133,7 @@ public class LevelJudge : MonoBehaviour
     /// </summary>
     private void GrantEvidenceCards(int count)
     {
-        // TODO: 等你的背包系统写好后，把增加卡牌的代码填在这里，例如：
-        // InventoryManager.Instance.AddCards(count);
-
-        Debug.Log($"[系统提示] 成功获取了 {count} 张证据牌！（代码占位）");
-
-        // 用 Toast 飘字给玩家视觉奖励
-        if (UIManager.Instance != null && UIManager.Instance.Toast != null)
-        {
-            UIManager.Instance.Toast.Show($"成功获取 {count} 张线索牌！", colorType: ToastColor.Positive);
-        }
+        // 已由 AkanaManager.CollectCard 替代
+        Debug.Log($"[系统提示] 成功获取了 {count} 张证据牌！");
     }
 }

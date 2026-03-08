@@ -805,6 +805,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DoorTransition
   targetSceneName: ServerRoom
+  targetPhase: 0
   ePromptUI: {fileID: 1497207729}
   modalContent: "\u626E\u6F14\u3010\u4FEE\u7406\u5458\u3011\u8FDB\u5165\u6838\u5FC3\u673A\u623F\u3002\\n\\n\u96BE\u5EA6\uFF1A\u4E2D\u7B49\\n\u9884\u671F\u6536\u76CA\uFF1A\u4F60\u6240\u8981\u7684\u771F\u76F8\\n\u6DF7\u4E71\u503C\uFF1A-5\uFF08\u964D\u4F4E\u8B66\u6212\uFF09\\n\\n\u786E\u5B9A\u8981\u9009\u62E9\u8FD9\u6761\u8DEF\u7EBF\u5417\uFF1F"
   chaosChange: -5
@@ -1974,6 +1975,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 692132525}
   m_CullTransparentMesh: 1
+--- !u!1 &760720260
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 760720262}
+  - component: {fileID: 760720261}
+  m_Layer: 0
+  m_Name: CorridorEndTrigger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &760720261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 760720260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e52cdd530954a841953765af837a45a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CorridorEndTrigger
+  cardToastText: "\u83B7\u5F97\u4E86\u3010\u6743\u6756\u3011\u963F\u5361\u90A3\u724C\uFF01"
+  modalPromptText: "\u4F60\u6210\u529F\u6F5C\u884C\u901A\u8FC7\u4E86\u8D70\u5ECA\uFF0C\u83B7\u5F97\u4E86\u3010\u6743\u6756\u3011\u963F\u5361\u90A3\u724C\u3002\n\n\u8BF7\u9009\u62E9\u63A5\u4E0B\u6765\u7684\u884C\u52A8\u8DEF\u7EBF\u3002"
+--- !u!4 &760720262
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 760720260}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -97, y: -2.7, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &773689097 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2041301216221015016, guid: 13ba550ebcf2acd40a25f2980be2a3ed, type: 3}
@@ -3861,6 +3908,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DoorTransition
   targetSceneName: PipeRoom
+  targetPhase: 0
   ePromptUI: {fileID: 416047345}
   modalContent: "\u626E\u6F14\u3010\u6E05\u6D01\u5DE5\u3011\u6E05\u7406\u5E9F\u5F03\u7BA1\u9053\u3002\\n\\n\u96BE\u5EA6\uFF1A\u4F4E\\n\u83B7\u5F97\u4F60\u6240\u8981\u7684\u8BC1\u636E\\n\u6DF7\u4E71\u503C\uFF1A\u65E0\u53D8\u5316\\n\\n\u786E\u5B9A\u8981\u9009\u62E9\u8FD9\u6761\u8DEF\u7EBF\u5417\uFF1F"
   chaosChange: 0
@@ -5574,3 +5622,4 @@ SceneRoots:
   - {fileID: 2129260604}
   - {fileID: 1589458917}
   - {fileID: 819299523}
+  - {fileID: 760720262}

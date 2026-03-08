@@ -67,5 +67,19 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Software-design.slnx"
+    "dotnet.defaultSolution": "Software-design.slnx",
+    "chat.tools.terminal.autoApprove": {
+        "/^python3 -c \"names = \\['\\\\u5546\\\\u4eba', '\\\\u5546\\\\u4eba\\\\u5c5e\\\\u6027', '\\\\u56de\\\\u9000', '\\\\u5ead\\\\u5ba1\\\\u89c4\\\\u5219', '\\\\u604b\\\\u4eba', '\\\\u604b\\\\u4eba\\\\u5c5e\\\\u6027', '\\\\u6253\\\\u51fa', '\\\\u6807\\\\u9898', '\\\\u6b63\\\\u4e49', '\\\\u6b63\\\\u4e49\\\\u5c5e\\\\u6027', '\\\\u7687\\\\u5e1d', '\\\\u7687\\\\u5e1d\\\\u5c5e\\\\u6027', '\\\\u89c4\\\\u5219\\\\u5c5e\\\\u6027\\\\u7248\\\\u9762', '\\\\u9009\\\\u62e9\\\\u89d2\\\\u8272\\\\u9762\\\\u677f'\\]; \\[print\\(n\\) for n in names\\]\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd \"D:\\\\Consensus Protocol\\\\new-one\"; python parse_prefab\\.py$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd \"D:\\\\Consensus Protocol\\\\new-one\"; python parse_prefab\\.py 2>&1 \\| Select-String \"OTHER ROOT\\|\\^\\[\\^\\\\\\|\\]\\.\\*\\\\\\(GO:\" \\| Select-Object -Last 30$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }

@@ -12,19 +12,19 @@
     "cardDefinitions": [
       {
         "name": "星币牌·肮脏的交易",
-        "evidenceDescription": "窃听到保安队长和高管的对话"
+        "evidenceDescription": "安保主管的加密受贿账单"
       },
       {
         "name": "宝剑牌·掩盖的行为",
-        "evidenceDescription": "一段违规删除记录"
+        "evidenceDescription": "管道破裂的照片（企图用水淹没服务器来掩盖证据）"
       },
       {
-        "name": "圣杯牌·破碎的家庭",
-        "evidenceDescription": "受害者女孩的全家福"
+        "name": "圣杯牌·无声的潜行",
+        "evidenceDescription": "机房监控日志，每天的监控盲区时段"
       },
       {
-        "name": "权杖牌·受害者的遗物",
-        "evidenceDescription": "小女孩的头绳"
+        "name": "权杖牌·纯粹的数据",
+        "evidenceDescription": "经过解码的真实记忆，大人的狂热和女孩的窒息尖叫"
       }
     ]
   },
@@ -36,28 +36,37 @@
         "name": "皇帝",
         "roleSetting": "管理层代表，极度理性，强调规则与秩序",
         "initialStance": "支持定罪",
-        "reasonThreshold": 80,
-        "emotionThreshold": 20,
-        "initialReasonLevel": 90,
-        "initialEmotionLevel": 10
+        "reasonThreshold": 40,
+        "emotionThreshold": 40,
+        "initialReasonLevel": 80,
+        "initialEmotionLevel": 0
       },
       {
         "name": "正义",
         "roleSetting": "法务代表，理性与情感平衡，关注程序正义",
         "initialStance": "支持定罪",
-        "reasonThreshold": 60,
-        "emotionThreshold": 40,
-        "initialReasonLevel": 70,
-        "initialEmotionLevel": 30
+        "reasonThreshold": 50,
+        "emotionThreshold": -1000,
+        "initialReasonLevel": 80,
+        "initialEmotionLevel": 0
       },
       {
         "name": "恋人",
         "roleSetting": "底层员工，极度感性，容易被真相打动",
         "initialStance": "动摇中",
-        "reasonThreshold": 30,
-        "emotionThreshold": 70,
-        "initialReasonLevel": 40,
-        "initialEmotionLevel": 60
+        "reasonThreshold": 50,
+        "emotionThreshold": 50,
+        "initialReasonLevel": 60,
+        "initialEmotionLevel": 30
+      },
+      {
+        "name": "商人",
+        "roleSetting": "利益至上",
+        "initialStance": "动摇中",
+        "reasonThreshold": 50,
+        "emotionThreshold": 40,
+        "initialReasonLevel": 70,
+        "initialEmotionLevel": 20
       }
     ]
   }

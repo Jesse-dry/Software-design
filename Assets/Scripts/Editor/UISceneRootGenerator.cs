@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
+using TMPro;
 using System.IO;
 
 /// <summary>
@@ -297,11 +298,11 @@ public static class UISceneRootGenerator
         timerText.transform.SetParent(timerPanel.transform, false);
         var ttRect = timerText.AddComponent<RectTransform>();
         StretchFull(ttRect);
-        var tt = timerText.AddComponent<Text>();
+        var tt = timerText.AddComponent<TextMeshProUGUI>();
         tt.text = "00:00";
         tt.fontSize = 28;
         tt.color = new Color(0.9f, 0.9f, 0.95f);
-        tt.alignment = TextAnchor.MiddleCenter;
+        tt.alignment = TextAlignmentOptions.Center;
 
         // ── 结果面板占位（居中，初始隐藏） ──
         var resultPanel = new GameObject("ResultPanel");

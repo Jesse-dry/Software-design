@@ -52,6 +52,9 @@ public static class GameBootstrapper
 
         //ChaosManager：混乱值管理
         CreateManager<ChaosManager>(root, "ChaosManager");
+
+        // AkanaManager：阿卡那牌收集管理
+        CreateManager<AkanaManager>(root, "AkanaManager");
         
         // UIManager：UI 统一管理（跨场景持久）
         CreateManager<UIManager>(root, "UIManager", ui =>
@@ -77,7 +80,12 @@ public static class GameBootstrapper
                 config.cutsceneScene,
                 config.memoryScene,
                 config.abyssScene, 
-                config.courtScene
+                config.courtScene,
+                config.corridorScene,
+                config.decodeGameScene,
+                config.pipeRoomScene,
+                config.pipePuzzleScene,
+                config.serverRoomScene
             );
         });
         

@@ -25,12 +25,19 @@ public class LightDetection : MonoBehaviour
 
     void CheckAndFail(GameObject playerObj)
     {
-        if (hasFailed) return; 
+        if (hasFailed) return;
+
+        // 调试开关：如果开启走廊无敌，且当前处于 Corridor 阶段，则忽略失败触发
+        if (DebugSettings.CorridorGodMode && GameManager.Instance != null && GameManager.Instance.IsInCorridor())
+        {
+            Debug.Log("[LightDetection] CorridorGodMode ON — 忽略失败触发。");
+            return;
+        }
 
         PlayerHide hideScript = playerObj.GetComponent<PlayerHide>();
-        if (hideScript != null && hideScript.isHiding) return; 
+        if (hideScript != null && hideScript.isHiding) return;
 
-        hasFailed = true; 
+        hasFailed = true;
 
         if (audioSource != null) audioSource.Play();
         GameObject mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
@@ -50,29 +57,37 @@ public class LightDetection : MonoBehaviour
 
 IEnumerator BlackScreenAndRestart()
     {
-        Debug.Log("🚨 1. 抓捕触发！准备开启黑屏！");
+        Debug.Log("🚨 保安抓捕触发！准备执行失败特效！");
 
+        // 【修改】优先使用 FailEffectController 的抖动特效 + 重载
+        if (FailEffectController.Instance != null)
+        {
+            // 仍然显示黑布作兜底（FailEffect 的 fail 面板会覆盖在上面）
+            if (blackScreenUI != null) blackScreenUI.SetActive(true);
+
+            FailEffectController.Instance.ShowFailEffect();
+            yield break; // FailEffectController 内部处理重载
+        }
+
+        // ── 降级路径：无 FailEffectController 时走原来的黑屏逻辑 ──
         if (blackScreenUI == null)
         {
-            Debug.LogError("❌ 致命报错：你撞到的【这个】保安，他的 'Black Screen UI' 槽位是空的！请仔细检查你撞的是谁！");
+            Debug.LogError("❌ 'Black Screen UI' 槽位为空！");
         }
         else
         {
-            Debug.Log("✅ 2. 槽位里有黑布！准备给黑布打勾！");
             blackScreenUI.SetActive(true);
-            
-            // 让电脑自己检查到底打上勾没有！
-            if (blackScreenUI.activeSelf)
-            {
-                Debug.Log("✅ 3. 打勾成功！如果还没看到黑屏，绝对是因为 DeathCanvas 被隐藏了，或者图片透明度是 0！");
-            }
-            else
-            {
-                Debug.LogError("❌ 4. 见鬼了！打了勾却没生效！请检查它的父级 DeathCanvas 是不是没打勾？");
-            }
         }
 
         yield return new WaitForSeconds(2.0f);
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ReloadCurrentPhase();
+        }
+        else
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
     }
 }

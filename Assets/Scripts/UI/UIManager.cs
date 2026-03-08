@@ -161,8 +161,13 @@ public class UIManager : MonoBehaviour
         Toast?.Initialize();
 
         PauseSystem.Initialize(canvasGO.transform);
+        InGameMenuController.Initialize(canvasGO.transform);
+        AkanaHUDController.Initialize(canvasGO.transform);
+        SelectRoleController.Initialize(canvasGO.transform);
+        FailEffectController.Initialize(canvasGO.transform);
+        InterrogationDialogueUI.Initialize(canvasGO.transform);
 
-        Debug.Log("[UIManager] 全局 UI 初始化完成（Transition + Toast）。");
+        Debug.Log("[UIManager] 全局 UI 初始化完成（Transition + Toast + Akana + SelectRole + FailEffect + InterrogationDialogue）。");
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -271,6 +276,10 @@ public class UIManager : MonoBehaviour
         if (existing != null)
         {
             _modalBackground = existing.GetComponent<Image>();
+            // ── 关键：不管是 Prefab 预置还是运行时找到的，都强制置底 ──
+            // 保证 ModalBackground 永远是 ModalLayer(sortOrder=90) 内的 index-0 节点，
+            // fail / SelectRole / 卡牌详情面板等所有弹出层都会渲染在它之上。
+            existing.SetAsFirstSibling();
         }
         else
         {

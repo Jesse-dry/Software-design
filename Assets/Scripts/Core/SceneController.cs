@@ -27,6 +27,9 @@ public class SceneController : MonoBehaviour
     private string courtScene = "Court";
     private string DecodeGameScene = "DecodeGame";
     private string corridorScene = "Corridor";
+    private string pipeRoomScene = "PipeRoom";
+    private string pipePuzzleScene = "PipePuzzle";
+    private string serverRoomScene = "ServerRoom";
 
     private bool isLoading = false;
 
@@ -62,7 +65,12 @@ public class SceneController : MonoBehaviour
         string cutscene,
         string memory,
         string abyss, 
-        string court)
+        string court,
+        string corridor,
+        string decodeGame,
+        string pipeRoom,
+        string pipePuzzle,
+        string serverRoom)
     {
         if (!string.IsNullOrEmpty(boot)) bootScene = boot;
         if (!string.IsNullOrEmpty(mainMenu)) mainMenuScene = mainMenu;
@@ -70,6 +78,11 @@ public class SceneController : MonoBehaviour
         if (!string.IsNullOrEmpty(memory)) memoryScene = memory;
         if (!string.IsNullOrEmpty(abyss)) abyssScene = abyss;
         if (!string.IsNullOrEmpty(court)) courtScene = court;
+        if (!string.IsNullOrEmpty(corridor)) corridorScene = corridor;
+        if (!string.IsNullOrEmpty(decodeGame)) DecodeGameScene = decodeGame;
+        if (!string.IsNullOrEmpty(pipeRoom)) pipeRoomScene = pipeRoom;
+        if (!string.IsNullOrEmpty(pipePuzzle)) pipePuzzleScene = pipePuzzle;
+        if (!string.IsNullOrEmpty(serverRoom)) serverRoomScene = serverRoom;
     }
 
     // =========================
@@ -114,6 +127,21 @@ public class SceneController : MonoBehaviour
     public void LoadCorridor()
     {
         LoadScene(corridorScene);
+    }
+
+    public void LoadPipeRoom()
+    {
+        LoadScene(pipeRoomScene);
+    }
+
+    public void LoadPipePuzzle()
+    {
+        LoadScene(pipePuzzleScene);
+    }
+
+    public void LoadServerRoom()
+    {
+        LoadScene(serverRoomScene);
     }
 
     // =========================

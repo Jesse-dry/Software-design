@@ -34,7 +34,16 @@ public class GameManager1 : MonoBehaviour
         mazeEnvironment.SetActive(false); // 隐藏所有墙壁和终点
         playerBall.SetActive(false); // 隐藏小球
         
-        tryAgainButton.SetActive(true); // 显示 Try Again 按钮
+        // 【修改】使用 FailEffectController 显示失败特效（抖动 + 重载）
+        if (FailEffectController.Instance != null)
+        {
+            FailEffectController.Instance.ShowFailEffect();
+        }
+        else
+        {
+            // 降级：显示 Try Again 按钮
+            tryAgainButton.SetActive(true);
+        }
     }
 
     // 碰到终点时使用
@@ -50,24 +59,32 @@ public class GameManager1 : MonoBehaviour
 
     private IEnumerator VictoryAndTransition()
     {
-        // 弹出胜利提示复用 Toast 系统
-        if (UIManager.Instance != null && UIManager.Instance.Toast != null)
-        {
-            // 绿色正面反馈字
+        // 弹出胜利提示
+        if (UIManager.Instance?.Toast != null)
             UIManager.Instance.Toast.Show("破解成功！核心加密日志已下载", colorType: ToastColor.Positive);
-        }
 
-        // 停顿 2 秒
         yield return new WaitForSeconds(2.0f);
 
-        //  获得重要证据（请根据你们背包/数据系统的实际代码调整！）
-        // 假设你们的数据管家叫 DataManager，大概是这样写：
-        // if (DataManager.Instance != null) { DataManager.Instance.AddEvidence("核心加密日志"); }
+        // 获得阿卡那牌 — 圣杯
+        if (AkanaManager.Instance != null)
+            AkanaManager.Instance.CollectCard(AkanaCardId.圣杯);
 
-        //大管家切入法庭阶段！
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.EnterPhase(GamePhase.Court);
-        }
+        // Toast 提示获得卡牌
+        if (UIManager.Instance?.Toast != null)
+            UIManager.Instance.Toast.Show("获得了【圣杯】阿卡那牌！", colorType: ToastColor.Positive);
+
+        yield return new WaitForSeconds(1.0f);
+
+        // 询问是否查看圣杯牌说明 → 关闭后进入法庭
+        AkanaVictoryHelper.AskViewCard(
+            AkanaCardId.圣杯,
+            "恭喜获得【圣杯】阿卡那牌，是否查看牌面内容？",
+            onFinished: () =>
+            {
+                Debug.Log("[DecodeGame] 迷宫通关，进入 Court！");
+                if (GameManager.Instance != null)
+                    GameManager.Instance.EnterPhase(GamePhase.Court);
+            }
+        );
     }
 }

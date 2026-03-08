@@ -45,11 +45,11 @@ public class CountdownTimer : MonoBehaviour
     }
 
     // ==========================================
-    // 【核心新增】失败并强行带入法庭的逻辑
+    // 【核心修改】超时失败 → 失败特效 → 重载
     // ==========================================
     private IEnumerator FailureAndTransition()
     {
-        // 1. 弹出警告提示 (GlitchFlash 闪烁效果最适合这种警报)
+        // 1. 弹出警告提示 (GlitchFlash 闪烁效果)
         if (UIManager.Instance != null && UIManager.Instance.Toast != null)
         {
             UIManager.Instance.Toast.Show("破解超时！安保系统已锁定！", ToastStyle.GlitchFlash);
@@ -61,10 +61,15 @@ public class CountdownTimer : MonoBehaviour
             ChaosManager.Instance.AddChaos(30, "破解终端超时");
         }
 
-        // 3. 停顿 2 秒，让玩家看到红字警告和混乱值增加
-        yield return new WaitForSeconds(2.0f);
+        // 3. 使用 FailEffectController 显示失败特效（抖动 + 重载场景）
+        if (FailEffectController.Instance != null)
+        {
+            FailEffectController.Instance.ShowFailEffect();
+            yield break; // FailEffectController 内部处理重载
+        }
 
-        // 4. 强行拉入法庭阶段！
+        // 降级：直接等待后强行进入法庭
+        yield return new WaitForSeconds(2.0f);
         if (GameManager.Instance != null)
         {
             GameManager.Instance.EnterPhase(GamePhase.Court);

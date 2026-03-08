@@ -33,6 +33,21 @@ public class GameBootConfig : ScriptableObject
     [Tooltip("庭审场景")]
     public string courtScene = "Court";
 
+    [Tooltip("走廊迷宫场景（从 Abyss Hub 进入）")]
+    public string corridorScene = "Corridor";
+
+    [Tooltip("拷贝小游戏场景（所有路线必经 → Court）")]
+    public string decodeGameScene = "DecodeGame";
+
+    [Tooltip("水管房间入口场景（从 Abyss Hub 进入）")]
+    public string pipeRoomScene = "PipeRoom";
+
+    [Tooltip("接水管谜题场景（从 PipeRoom 进入）")]
+    public string pipePuzzleScene = "PipePuzzle";
+
+    [Tooltip("服务器室 Q&A 场景（从 Abyss Hub 进入）")]
+    public string serverRoomScene = "ServerRoom";
+
     [Header("初始阶段 - 决定游戏从哪个阶段开始")]
     [Tooltip("开发时可以从任意阶段开始测试")]
     public GamePhase startPhase = GamePhase.Boot;
@@ -61,4 +76,16 @@ public class GameBootConfig : ScriptableObject
     
     [ContextMenu("设为从 Court 开始")]
     private void SetStartToCourt() { startPhase = GamePhase.Court; }
+
+    [ContextMenu("设为从 Corridor 开始")]
+    private void SetStartToCorridor() { startPhase = GamePhase.Corridor; }
+
+    [ContextMenu("设为从 PipeRoom 开始")]
+    private void SetStartToPipeRoom() { startPhase = GamePhase.PipeRoom; }
+
+    [ContextMenu("设为从 ServerRoom 开始")]
+    private void SetStartToServerRoom() { startPhase = GamePhase.ServerRoom; }
+
+    [ContextMenu("设为从 DecodeGame 开始")]
+    private void SetStartToDecodeGame() { startPhase = GamePhase.DecodeGame; }
 }

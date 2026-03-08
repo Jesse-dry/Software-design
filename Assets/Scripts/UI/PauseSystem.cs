@@ -99,6 +99,14 @@ public class PauseSystem : MonoBehaviour
 
         if (escPressed)
         {
+            // 优先：如果游戏内主菜单（InGameMenuController）正在打开，ESC 关闭它
+            if (InGameMenuController.Instance != null && InGameMenuController.Instance.IsMenuOpen)
+            {
+                Debug.Log("[PauseSystem] ESC → 关闭游戏内主菜单");
+                InGameMenuController.Instance.HideMenu();
+                return;
+            }
+
             Debug.Log("[PauseSystem] 按下了 ESC，准备呼叫 TogglePause...");
             TogglePause();
         }

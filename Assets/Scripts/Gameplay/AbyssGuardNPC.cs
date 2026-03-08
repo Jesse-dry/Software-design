@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem; // 兼容新版输入系统
 using System.Collections;
 
@@ -67,32 +67,52 @@ public class AbyssGuardNPC : MonoBehaviour
         }
     }
 
-    // 核心拷问逻辑（与之前一致，完美对接队友的 UI）
+    // 核心拷问逻辑 — 使用新的盘问对话UI
     private void Interact()
     {
         if (_hasPassed)
         {
-            UIManager.Instance.Toast.Show("“赶紧进去修终端，别磨蹭。”");
+            UIManager.Instance.Toast.Show("赶紧进去修终端，别磨蹭。");
             return;
+        }
+
+        // 获取盘问对话UI
+        var interrogationUI = InterrogationDialogueUI.Instance;
+        if (interrogationUI == null)
+        {
+            interrogationUI = FindAnyObjectByType<InterrogationDialogueUI>();
         }
 
         if (!_askedTrap)
         {
-            string content = $"【{npcName}】\n{trapQuestion}\n\n(提示：根据线索，你是李工吗？\n点击【确认】承认，按 Esc 保持沉默)";
+            string title = npcName;
+            string content = trapQuestion + "\n\n(提示：根据线索，你是李工吗？\n点击【是】承认，点击【否】保持沉默)";
 
-            // 陷阱题：确认受罚，沉默没事（_askedTrap 标记为 true，下次就问口令了）
-            UIManager.Instance.Modal.ShowConfirm(content, OnTrapConfirmed, OnTrapSilenced);
+            if (interrogationUI != null)
+            {
+                interrogationUI.Show(title, content, OnTrapConfirmed, OnTrapSilenced);
+            }
+            else
+            {
+                UIManager.Instance.Modal.ShowConfirm("【" + npcName + "】\n" + content, OnTrapConfirmed, OnTrapSilenced);
+            }
             _askedTrap = true;
         }
         else
         {
-            string content = $"【{npcName}】\n{passQuestion}\n\n(点击【确认】报出口令，按 Esc 保持沉默)";
+            string title = npcName;
+            string content = passQuestion + "\n\n(点击【是】报出口令，点击【否】保持沉默)";
 
-            // 口令题：确认通关，沉默受罚！
-            UIManager.Instance.Modal.ShowConfirm(content, PassInterrogation, OnPasswordSilenced);
+            if (interrogationUI != null)
+            {
+                interrogationUI.Show(title, content, PassInterrogation, OnPasswordSilenced);
+            }
+            else
+            {
+                UIManager.Instance.Modal.ShowConfirm("【" + npcName + "】\n" + content, PassInterrogation, OnPasswordSilenced);
+            }
         }
     }
-
 
     private void OnTrapConfirmed()
     {
@@ -145,9 +165,9 @@ public class AbyssGuardNPC : MonoBehaviour
     private void PassInterrogation()
     {
         _hasPassed = true;
-        UIManager.Instance.Toast.Show("“口令正确，终端在里面，去吧。”");
+        UIManager.Instance.Toast.Show("口令正确，终端在里面，去吧。");
 
-        // 找到身上【不是Trigger】的那个实体碰撞体（墙），把它关掉，放行玩家！
+        // 关闭实体碰撞体（放行玩家）
         Collider2D[] colliders = GetComponents<Collider2D>();
         foreach (var col in colliders)
         {
@@ -156,5 +176,32 @@ public class AbyssGuardNPC : MonoBehaviour
                 col.enabled = false;
             }
         }
+
+        // 收集阿卡那牌 — 宝剑
+        if (AkanaManager.Instance != null)
+            AkanaManager.Instance.CollectCard(AkanaCardId.宝剑);
+
+        // 延迟后弹出查看流程
+        StartCoroutine(PassAndTransition());
+    }
+
+    private System.Collections.IEnumerator PassAndTransition()
+    {
+        // Toast 提示获得卡牌
+        if (UIManager.Instance?.Toast != null)
+            UIManager.Instance.Toast.Show("获得了【宝剑】阿卡那牌！", colorType: ToastColor.Positive);
+
+        yield return new WaitForSeconds(1.0f);
+
+        // 询问是否查看宝剑牌说明 → 关闭后返回走廊选角色
+        AkanaVictoryHelper.AskViewCard(
+            AkanaCardId.宝剑,
+            "恭喜获得【宝剑】阿卡那牌，是否查看牌面内容？",
+            onFinished: () =>
+            {
+                Debug.Log("[AbyssGuard] 盘问通过，返回 Corridor SelectRole！");
+                SelectRoleController.ReturnToCorridorSelectRole();
+            }
+        );
     }
 }

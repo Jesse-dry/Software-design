@@ -6,53 +6,30 @@
 
 - [简介](#简介)
 - [功能](#功能)
-- [前置要求](#前置要求)
 - [安装](#安装)
-- [使用方法](#使用方法)
 - [项目结构](#项目结构)
 - [贡献](#贡献)
 - [许可证](#许可证)
 
 ## 简介
 
-简要描述项目的目的和核心概念。
+一款游戏，此为测试文件
 
 ## 功能
 
-- 功能1：简要描述
-- 功能2：简要描述
-- 功能3：简要描述
+仅为README
 
-## 前置要求
-
-- Node.js 14.0 或更高版本
-- npm 6.0 或更高版本
-- Python 3.8 或更高版本（如适用）
 
 ## 安装
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/Software-design.git
+git clone https://github.com/Jesse-dry/Software-design.git
 
 # 进入项目目录
 cd Software-design
 
-# 安装依赖
-npm install
-```
 
-## 使用方法
-
-### 基本示例
-
-```bash
-# 启动项目
-npm start
-
-# 运行测试
-npm test
-```
 
 ### 详细说明
 
@@ -87,4 +64,4 @@ Software-design/
 
 如有任何问题，欢迎通过以下方式联系：
 - 提交 Issue
-- 发送邮件至：your.email@example.com
+- 发送邮件至：dingj25@mails.tsinghua.edu.cn

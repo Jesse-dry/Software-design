@@ -79,6 +79,10 @@ public class HUDSystem : MonoBehaviour
         hudRoot = null;
         hudCanvasGroup = null;
 
+        // 当 hudLayer 为 null 时 барColorGradient 也需要初始化，
+        // 否则 ChaosHUDAdapter.Start 调用 SetValue 时会抛 NullReferenceException
+        EnsureGradient();
+
         var hudLayer = UIManager.Instance?.hudLayer;
         if (hudLayer == null) return;
 
@@ -105,21 +109,22 @@ public class HUDSystem : MonoBehaviour
 
         SetVisible(visibleOnStart);
 
-        // 初始化默认渐变（如果未在 Inspector 设置）
-        if (barColorGradient == null || barColorGradient.colorKeys.Length == 0)
-        {
-            barColorGradient = new Gradient();
-            barColorGradient.SetKeys(
-                new[] {
-                    new GradientColorKey(new Color(0.2f, 0.6f, 0.9f), 0f),   // 低值：冷蓝
-                    new GradientColorKey(new Color(0.9f, 0.3f, 0.3f), 1f),   // 高值：暗红
-                },
-                new[] {
-                    new GradientAlphaKey(1f, 0f),
-                    new GradientAlphaKey(1f, 1f),
-                }
-            );
-        }
+    }
+
+    private void EnsureGradient()
+    {
+        if (barColorGradient != null && barColorGradient.colorKeys.Length > 0) return;
+        barColorGradient = new Gradient();
+        barColorGradient.SetKeys(
+            new[] {
+                new GradientColorKey(new Color(0.2f, 0.6f, 0.9f), 0f),   // 低値：冷蓝
+                new GradientColorKey(new Color(0.9f, 0.3f, 0.3f), 1f),   // 高値：暗红
+            },
+            new[] {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(1f, 1f),
+            }
+        );
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -155,7 +160,10 @@ public class HUDSystem : MonoBehaviour
 
         // 更新颜色
         if (binding.fillImage != null)
+        {
+            EnsureGradient();
             binding.fillImage.color = barColorGradient.Evaluate(normalizedValue);
+        }
 
         // 动画填充
         AnimateBar(binding, normalizedValue);

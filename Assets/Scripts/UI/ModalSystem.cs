@@ -322,6 +322,62 @@ public class ModalSystem : MonoBehaviour
         return instance;
     }
 
+    /// <summary>显示输入弹窗（提示 + 输入框 + 确认/取消按钮）。</summary>
+    public void ShowInput(string message, string placeholder, Action<string> onConfirm, Action onCancel = null)
+    {
+        var modalLayer = UIManager.Instance?.modalLayer;
+        if (modalLayer == null)
+        {
+            Debug.LogWarning("[ModalSystem] modalLayer 为 null，无法打开输入弹窗。");
+            onCancel?.Invoke();
+            return;
+        }
+
+        if (_modalStack.Count == 0)
+            UIManager.Instance.ShowModalBackground();
+
+        var panel = CreateRuntimeInputModal(modalLayer, message, placeholder);
+        panel.name = "InputModal";
+
+        var inputField = panel.GetComponentInChildren<TMP_InputField>();
+        var confirmBtn = panel.transform.Find("ConfirmButton")?.GetComponent<Button>();
+        var cancelBtn  = panel.transform.Find("CancelButton")?.GetComponent<Button>();
+
+        if (confirmBtn != null) ApplyStyledButton(confirmBtn.gameObject);
+        if (cancelBtn != null)  ApplyStyledButton(cancelBtn.gameObject);
+
+        bool decided = false;
+        Action doConfirm = () =>
+        {
+            if (decided) return;
+            decided = true;
+            string value = inputField != null ? inputField.text : "";
+            Close(() => onConfirm?.Invoke(value));
+        };
+        Action doCancel = () =>
+        {
+            if (decided) return;
+            decided = true;
+            Close(() => onCancel?.Invoke());
+        };
+
+        confirmBtn?.onClick.AddListener(() => doConfirm());
+        cancelBtn?.onClick.AddListener(() => doCancel());
+
+        _modalStack.Push(new ModalEntry
+        {
+            panel = panel,
+            onConfirm = doConfirm,
+            onCancel = doCancel,
+            openFrame = Time.frameCount
+        });
+
+        PlayOpenAnimation(panel.transform, () =>
+        {
+            inputField?.ActivateInputField();
+        });
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  关闭
     // ══════════════════════════════════════════════════════════════
@@ -467,6 +523,78 @@ public class ModalSystem : MonoBehaviour
         CreateTMPChild(panel.transform, "Message", "确认？", 22, new Vector2(0, 30), new Vector2(400, 100));
         CreateButtonChild(panel.transform, "YesButton", "是", new Vector2(-80, -70), new Vector2(120, 40));
         CreateButtonChild(panel.transform, "NoButton", "否", new Vector2(80, -70), new Vector2(120, 40));
+        return panel;
+    }
+
+    private GameObject CreateRuntimeInputModal(Transform parent, string message, string placeholder)
+    {
+        var panel = CreateModalPanel(parent, new Vector2(650, 300));
+
+        // 提示文字
+        CreateTMPChild(panel.transform, "Message", message, 20,
+            new Vector2(0, 85), new Vector2(580, 70));
+
+        // ── 输入框容器 ──
+        var inputGO = new GameObject("InputField");
+        inputGO.transform.SetParent(panel.transform, false);
+        var inputRect = inputGO.AddComponent<RectTransform>();
+        inputRect.anchoredPosition = new Vector2(0, 0);
+        inputRect.sizeDelta = new Vector2(540, 50);
+        var inputBg = inputGO.AddComponent<Image>();
+        inputBg.color = new Color(0.1f, 0.1f, 0.15f, 1f);
+
+        // Text Area（输入框的文本视口）
+        var textArea = new GameObject("Text Area");
+        textArea.transform.SetParent(inputGO.transform, false);
+        var textAreaRect = textArea.AddComponent<RectTransform>();
+        textAreaRect.anchorMin = Vector2.zero;
+        textAreaRect.anchorMax = Vector2.one;
+        textAreaRect.offsetMin = new Vector2(10, 5);
+        textAreaRect.offsetMax = new Vector2(-10, -5);
+        textArea.AddComponent<RectMask2D>();
+
+        // Placeholder
+        var placeholderGO = new GameObject("Placeholder");
+        placeholderGO.transform.SetParent(textArea.transform, false);
+        var phRect = placeholderGO.AddComponent<RectTransform>();
+        phRect.anchorMin = Vector2.zero;
+        phRect.anchorMax = Vector2.one;
+        phRect.offsetMin = Vector2.zero;
+        phRect.offsetMax = Vector2.zero;
+        var phText = placeholderGO.AddComponent<TextMeshProUGUI>();
+        phText.text = placeholder;
+        phText.fontSize = 16;
+        phText.color = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+        phText.fontStyle = FontStyles.Italic;
+        ApplyChineseFont(phText);
+
+        // 输入文本
+        var inputTextGO = new GameObject("Text");
+        inputTextGO.transform.SetParent(textArea.transform, false);
+        var itRect = inputTextGO.AddComponent<RectTransform>();
+        itRect.anchorMin = Vector2.zero;
+        itRect.anchorMax = Vector2.one;
+        itRect.offsetMin = Vector2.zero;
+        itRect.offsetMax = Vector2.zero;
+        var inputText = inputTextGO.AddComponent<TextMeshProUGUI>();
+        inputText.fontSize = 16;
+        inputText.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+        ApplyChineseFont(inputText);
+
+        // 组装 TMP_InputField
+        var inputField = inputGO.AddComponent<TMP_InputField>();
+        inputField.textViewport = textAreaRect;
+        inputField.textComponent = inputText;
+        inputField.placeholder = phText;
+        inputField.fontAsset = inputText.font;
+        inputField.pointSize = 16;
+
+        // 按钮
+        CreateButtonChild(panel.transform, "ConfirmButton", "确认",
+            new Vector2(-90, -100), new Vector2(140, 40));
+        CreateButtonChild(panel.transform, "CancelButton", "取消",
+            new Vector2(90, -100), new Vector2(140, 40));
+
         return panel;
     }
 

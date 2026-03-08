@@ -256,7 +256,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a3a8ee2c88d13342a70aaea5729a07e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CourtController
-  currentTopicId: guilt
 --- !u!4 &1113149316
 Transform:
   m_ObjectHideFlags: 0
@@ -272,6 +271,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!224 &1529568658 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 7913552573563893490, guid: 4afa40f1ffb2c11449cd2f46102f80cf, type: 3}
+  m_PrefabInstance: {fileID: 937953410}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1909981876
 GameObject:
   m_ObjectHideFlags: 0

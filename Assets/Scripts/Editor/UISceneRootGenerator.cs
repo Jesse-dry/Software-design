@@ -31,6 +31,7 @@ public static class UISceneRootGenerator
     // ── 场景定义（场景名 → 是否需要特殊定制） ───────────────────
     private static readonly SceneDef[] Scenes =
     {
+        new("MainMenu",      "UIRoot_MainMenu", SceneUIProfile.Minimal),
         new("CutsceneScene", "UIRoot_Cutscene",  SceneUIProfile.Minimal),
         new("Memory",        "UIRoot_Memory",    SceneUIProfile.Memory),
         new("Abyss",         "UIRoot_Abyss",     SceneUIProfile.Exploration),

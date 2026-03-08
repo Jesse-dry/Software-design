@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using System.Collections.Generic;
+using TMPro;
 
 /// <summary>
 /// 阿卡那牌 HUD 控制器（全局持久，跨场景自动注入）。
@@ -480,6 +481,9 @@ public class AkanaHUDController : MonoBehaviour
         _isCardDetailOpen = true;
         _openedCardDetail = cardId;
 
+        // ── LLM 文本注入：如果大模型已生成文本，替换 prefab 原始内容 ──
+        TryInjectLLMCardText(cardId, panel);
+
         // 显示模态背景
         if (_modalBackground != null)
         {
@@ -632,6 +636,45 @@ public class AkanaHUDController : MonoBehaviour
 
         CleanupPreviousScene();
         Instance = null;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  LLM 文本注入
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 卡牌描述面板中的 "文本内容" 子物体名称（与 prefab 一致）。
+    /// </summary>
+    private const string CARD_TEXT_NODE_NAME = "文本内容";
+
+    /// <summary>
+    /// 如果 LLM 模式启用且文本已就绪，将面板内 "文本内容" 的 TMP_Text 替换为 LLM 生成文本。
+    /// 否则保留 prefab 原始文本不变。
+    /// </summary>
+    private void TryInjectLLMCardText(AkanaCardId cardId, GameObject panel)
+    {
+        if (!LLMBridge.IsEnabled) return;
+
+        string llmText = LLMBridge.GetCardText(cardId);
+        if (string.IsNullOrEmpty(llmText)) return;
+
+        var textNode = FindInChildren(panel.transform, CARD_TEXT_NODE_NAME);
+        if (textNode == null)
+        {
+            Debug.LogWarning($"[AkanaHUD] 面板 '{panel.name}' 中未找到 '{CARD_TEXT_NODE_NAME}' 子物体！");
+            return;
+        }
+
+        var tmpText = textNode.GetComponent<TMP_Text>();
+        if (tmpText != null)
+        {
+            tmpText.text = llmText;
+            Debug.Log($"[AkanaHUD] 已注入 LLM 文本到 {AkanaManager.GetCardPanelName(cardId)}");
+        }
+        else
+        {
+            Debug.LogWarning($"[AkanaHUD] '{CARD_TEXT_NODE_NAME}' 上未找到 TMP_Text 组件！");
+        }
     }
 
     // ══════════════════════════════════════════════════════════════

@@ -79,6 +79,13 @@ public class AkanaManager : MonoBehaviour
         OnCardCollected?.Invoke(cardId);
     }
 
+    /// <summary>消耗一张已收集的卡牌（庭审使用后移除）</summary>
+    public void ConsumeCard(AkanaCardId cardId)
+    {
+        _collectedCards.Remove(cardId);
+        Debug.Log("[AkanaManager] 消耗卡牌: " + cardId);
+    }
+
     /// <summary>是否已收集指定卡牌</summary>
     public bool HasCard(AkanaCardId cardId)
     {

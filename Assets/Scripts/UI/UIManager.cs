@@ -166,8 +166,9 @@ public class UIManager : MonoBehaviour
         SelectRoleController.Initialize(canvasGO.transform);
         FailEffectController.Initialize(canvasGO.transform);
         InterrogationDialogueUI.Initialize(canvasGO.transform);
+        CourtUIController.Initialize(canvasGO.transform);
 
-        Debug.Log("[UIManager] 全局 UI 初始化完成（Transition + Toast + Akana + SelectRole + FailEffect + InterrogationDialogue）。");
+        Debug.Log("[UIManager] 全局 UI 初始化完成（Transition + Toast + Akana + SelectRole + FailEffect + InterrogationDialogue + Court）。");
     }
 
     // ══════════════════════════════════════════════════════════════

@@ -804,8 +804,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31e257b99c44a364aba3f93fab5bfbe3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DoorTransition
-  targetSceneName: "\u673A\u623F"
+  targetSceneName: ServerRoom
   ePromptUI: {fileID: 1497207729}
+  modalContent: "\u626E\u6F14\u3010\u4FEE\u7406\u5458\u3011\u8FDB\u5165\u6838\u5FC3\u673A\u623F\u3002\\n\\n\u96BE\u5EA6\uFF1A\u4E2D\u7B49\\n\u9884\u671F\u6536\u76CA\uFF1A\u4F60\u6240\u8981\u7684\u771F\u76F8\\n\u6DF7\u4E71\u503C\uFF1A-5\uFF08\u964D\u4F4E\u8B66\u6212\uFF09\\n\\n\u786E\u5B9A\u8981\u9009\u62E9\u8FD9\u6761\u8DEF\u7EBF\u5417\uFF1F"
+  chaosChange: -5
+  chaosReason: "\u4F2A\u88C5\u4FEE\u7406\u5458"
 --- !u!61 &379600622
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1976,6 +1979,103 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2041301216221015016, guid: 13ba550ebcf2acd40a25f2980be2a3ed, type: 3}
   m_PrefabInstance: {fileID: 1103144309}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &819299523
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4727907308849660843, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_Name
+      value: UIRoot_Corridor
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7306773532882232492, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 79ba9007aeb31664e9700cba0d953c79, type: 3}
 --- !u!1 &890350490
 GameObject:
   m_ObjectHideFlags: 0
@@ -3752,8 +3852,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31e257b99c44a364aba3f93fab5bfbe3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DoorTransition
-  targetSceneName: "\u6C34\u7BA1\u623F\u95F4"
+  targetSceneName: PipeRoom
   ePromptUI: {fileID: 416047345}
+  modalContent: "\u626E\u6F14\u3010\u6E05\u6D01\u5DE5\u3011\u6E05\u7406\u5E9F\u5F03\u7BA1\u9053\u3002\\n\\n\u96BE\u5EA6\uFF1A\u4F4E\\n\u83B7\u5F97\u4F60\u6240\u8981\u7684\u8BC1\u636E\\n\u6DF7\u4E71\u503C\uFF1A\u65E0\u53D8\u5316\\n\\n\u786E\u5B9A\u8981\u9009\u62E9\u8FD9\u6761\u8DEF\u7EBF\u5417\uFF1F"
+  chaosChange: 0
+  chaosReason: "\u65E0"
 --- !u!61 &1649013261
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -5373,3 +5476,4 @@ SceneRoots:
   - {fileID: 109887508}
   - {fileID: 2129260604}
   - {fileID: 1589458917}
+  - {fileID: 819299523}

@@ -220,7 +220,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u9009\u62E9\u4EE5"
+  m_text: "\u9009\u62E9\u6C34\u7BA1\u5DE5\uFF1A\u8D70\u8FDB\u901A\u98CE\u7BA1\u9053\uFF0C\u65E0\u76D1\u63A7\uFF0C\u96BE\u5EA6\u8F83\u4F4E\uFF0C\u53EF\u83B7\u53D6\u76F8\u5173\u666E\u901A\u8BC1\u636E\uFF0C\u6DF7\u4E71\u503C\u65E0\u521D\u59CB\u52A0\u6210"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f5cb71562f601964092af121aa80f06b, type: 2}
   m_sharedMaterial: {fileID: -977888854377157334, guid: f5cb71562f601964092af121aa80f06b, type: 2}
@@ -557,7 +557,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u554A\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86"
+  m_text: "\u9009\u62E9\"\u7F6A\u5F92\"\u539F\u672C\u7684\u8EAB\u4EFD..."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f5cb71562f601964092af121aa80f06b, type: 2}
   m_sharedMaterial: {fileID: -977888854377157334, guid: f5cb71562f601964092af121aa80f06b, type: 2}
@@ -1374,7 +1374,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u554A\u5566\u5566\u5566\u5566\u5566\u5566\u5566\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86\u4E86"
+  m_text: "\u6280\u672F\u4EBA\u5458\uFF1A\u8FDB\u5165\u673A\u623F\uFF0C\u4F1A\u9047\u5230\u76D8\u95EE\uFF0C\u96BE\u5EA6\u4E2D\u7B49\uFF0C\u53EF\u4EE5\u83B7\u53D6\u66F4\u591A\u7684\u8BC1\u636E\uFF0C\u6DF7\u4E71\u503C-5"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f5cb71562f601964092af121aa80f06b, type: 2}
   m_sharedMaterial: {fileID: -977888854377157334, guid: f5cb71562f601964092af121aa80f06b, type: 2}
@@ -1657,6 +1657,10 @@ PrefabInstance:
     - target: {fileID: 7886183867721445234, guid: 827aaa36de9b31245a4a0f18029d1609, type: 3}
       propertyPath: m_Name
       value: akana
+      objectReference: {fileID: 0}
+    - target: {fileID: 7886183867721445234, guid: 827aaa36de9b31245a4a0f18029d1609, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2091,6 +2095,10 @@ PrefabInstance:
     - target: {fileID: 1574165509255935648, guid: 238841749394a2d4da0bcbd0df99cbce, type: 3}
       propertyPath: m_Name
       value: "\u6743\u6756\u724C"
+      objectReference: {fileID: 0}
+    - target: {fileID: 1574165509255935648, guid: 238841749394a2d4da0bcbd0df99cbce, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8379437286712299900, guid: 238841749394a2d4da0bcbd0df99cbce, type: 3}
       propertyPath: m_Pivot.x

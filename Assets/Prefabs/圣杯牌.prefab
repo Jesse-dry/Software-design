@@ -277,7 +277,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u724C\u9762"
+  m_text: "\u8BC1\u636E\u5185\u5BB9\uFF1A\u300A\u673A\u623F\u76F2\u533A\u4E0E\u6743\u9650\u66F4\u8FED\u65E5\u5FD7\u300B\r\n\u201C\u7CFB\u7EDF\u65E5\u5FD7\u663E\u793A\uFF0CC\u533A\u795E\u7ECF\u8D70\u5ECA\u7684\u76D1\u63A7\u63A2\u5934\u5728\u6BCF\u65E5
+    22:00-22:15 \u4F1A\u51FA\u73B0\u957F\u8FBE 15 \u5206\u949F\u7684\u2018\u4F8B\u884C\u91CD\u542F\u2019\u3002\u8FD9\u4E0D\u662F\u7CFB\u7EDF\u8001\u5316\uFF0C\u800C\u662F\u6709\u4EBA\u4E3A\u4E86\u65B9\u4FBF\u79C1\u4E0B\u8FD0\u9001\u672A\u7ECF\u5408\u89C4\u626B\u63CF\u7684\u2018\u7279\u6743\u8BB0\u5FC6\u7F50\u2019\uFF0C\u6545\u610F\u7559\u51FA\u7684\u540E\u95E8\u3002\u201D\n\n\u6548\u679C\uFF1A
+    \u73A9\u5BB6\u6DF7\u4E71\u503C -15\r\n\u5728\u6CD5\u5EAD\u4E0A\u6253\u51FA\u6B64\u724C\uFF0C\u53EF\u4F7F\u5F97\u4E00\u4F4DNPC\u7684\u7406\u6027\u503C\u964D\u4F4E30\u3002"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f5cb71562f601964092af121aa80f06b, type: 2}
   m_sharedMaterial: {fileID: -977888854377157334, guid: f5cb71562f601964092af121aa80f06b, type: 2}
@@ -569,7 +571,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u724C\u540D"
+  m_text: "\u5723\u676F\u724C\xB7\u65E0\u58F0\u7684\u6F5C\u884C"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 7670bf65f72beed4da1e6c47b0e98ab1, type: 2}
   m_sharedMaterial: {fileID: 3809790841505763724, guid: 7670bf65f72beed4da1e6c47b0e98ab1, type: 2}
@@ -635,7 +637,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: -180.35547, y: 0, z: -66.52429, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0

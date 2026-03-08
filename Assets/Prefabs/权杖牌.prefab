@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 406, y: 390}
+  m_AnchoredPosition: {x: 507, y: 390}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5300962647572926893
@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u724C\u540D"
+  m_text: "\u6743\u6756\u724C\xB7\u7EC8\u672B\u7684\u5BA1\u5224"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 7670bf65f72beed4da1e6c47b0e98ab1, type: 2}
   m_sharedMaterial: {fileID: 3809790841505763724, guid: 7670bf65f72beed4da1e6c47b0e98ab1, type: 2}
@@ -131,7 +131,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: -266.79468, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -478,7 +478,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u724C\u9762"
+  m_text: "\u8BC1\u636E\u5185\u5BB9\uFF1A\u300A\u7B2C07\u53F7\u7EDD\u5BC6\u5B58\u6863\uFF1A\u7B2C\u4E00\u4EBA\u79F0\u53D7\u5BB3\u8005\u611F\u5B98\u5207\u7247\u300B\r\n\u201C\u6CA1\u6709\u4EFB\u4F55\u4E3B\u89C2\u89E3\u8BFB\uFF0C\u8FD9\u5C31\u662F\u7EAF\u7CB9\u7684\u2018\u6570\u636E\u2019\u3002\u8FD9\u6BB5\u672A\u7ECF\u52A0\u5BC6\u7684\u8BB0\u5FC6\u6B8B\u7247\u91CC\uFF0C\u8BB0\u5F55\u4E86\u90A3\u4E2A\u5927\u4EBA\u7269\u773C\u4E2D\u7684\u72C2\u70ED\uFF0C\u4EE5\u53CA\u5C11\u5973\u6FD2\u6B7B\u524D\u6781\u81F4\u7684\u6050\u60E7\u3001\u7A92\u606F\u4E0E\u75DB\u695A\u3002\u5982\u679C\u300A\u7EDD\u5BF9\u9759\u9ED8\u300B\u8981\u6C42\u6211\u4EEC\u5BF9\u90AA\u6076\u89C6\u800C\u4E0D\u89C1\uFF0C\u90A3\u4E48\u4ECA\u5929\uFF0C\u5C31\u8BA9\u6570\u636E\u81EA\u5DF1\u5F00\u53E3\u5C16\u53EB\u3002\u201D\n\n\u6548\u679C\uFF1A\u96F6\u53F7\u6CD5\u5EAD\u4E0A\u6253\u51FA\u6B64\u724C\uFF0C\u65E0\u89C6\u73A9\u5BB6\u5F53\u524D\u6DF7\u4E71\u503C\u5E26\u6765\u7684\u6240\u6709\u8D1F\u9762\u5F71\u54CD
+    \u5168\u573A\u6240\u6709\u654C\u5BF9 NPC \u7406\u6027\u503C -30\uFF0C\u60C5\u611F\u503C
+    +30"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f5cb71562f601964092af121aa80f06b, type: 2}
   m_sharedMaterial: {fileID: -977888854377157334, guid: f5cb71562f601964092af121aa80f06b, type: 2}

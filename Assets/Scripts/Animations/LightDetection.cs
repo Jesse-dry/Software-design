@@ -62,9 +62,8 @@ IEnumerator BlackScreenAndRestart()
         // 【修改】优先使用 FailEffectController 的抖动特效 + 重载
         if (FailEffectController.Instance != null)
         {
-            // 仍然显示黑布作兜底（FailEffect 的 fail 面板会覆盖在上面）
-            if (blackScreenUI != null) blackScreenUI.SetActive(true);
-
+            // ⚠️ 不激活 blackScreenUI（DeathCanvas sortingOrder=999 > ModalLayer=90，
+            //    黑布会遮住 fail 面板）。fail 面板本身负责全屏视觉反馈。
             FailEffectController.Instance.ShowFailEffect();
             yield break; // FailEffectController 内部处理重载
         }

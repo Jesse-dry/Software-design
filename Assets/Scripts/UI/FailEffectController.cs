@@ -224,16 +224,22 @@ public class FailEffectController : MonoBehaviour
 
     private void ReloadCurrentScene()
     {
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.ReloadCurrentPhase();
+            // 仅在 CurrentPhase 已被正确设置时才走 GameManager 状态机
+            // 若 CurrentPhase 仍是 Boot（例如直接运行场景测试时），
+            // EnterNewPhase(Boot) 什么都不做，需要降级直接重载
+            if (GameManager.Instance.CurrentPhase != GamePhase.Boot)
+            {
+                GameManager.Instance.ReloadCurrentPhase();
+                return;
+            }
         }
-        else
-        {
-            // 降级：直接重载当前场景
-            UnityEngine.SceneManagement.SceneManager.LoadScene(
-                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
-        }
+
+        // 降级：直接重载当前场景
+        UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
     }
 
     // ══════════════════════════════════════════════════════════════

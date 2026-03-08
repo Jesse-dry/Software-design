@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 
 /// <summary>
 /// 庭审主控制器 ── 场景内单例，驱动 4 回合庭审流程。
@@ -68,6 +69,12 @@ public class CourtController : MonoBehaviour
     public event Action<AkanaCardId> OnCardSelected;
     public event Action<CourtData.NPCId, int, int> OnNPCStatChanged;
 
+    /// <summary>LLM 模式下，出牌后请求玩家输入证词。参数：所选牌 ID。</summary>
+    public event Action<AkanaCardId> OnArgumentInputRequested;
+
+    /// <summary>LLM 模式下，证词评分结果。参数：评分 (0-10)，是否获得加成。</summary>
+    public event Action<int, bool> OnArgumentScoreResult;
+
     // ════════════════════════════════════════════════════════════════
     //  生命周期
     // ════════════════════════════════════════════════════════════════
@@ -80,13 +87,19 @@ public class CourtController : MonoBehaviour
 
     private void Start()
     {
-        if (GameManager.Instance == null || !GameManager.Instance.IsInCourt())
+        // \u4e0d\u4f9d\u8d56 GameManager.IsInCourt()\uff08Start \u65f6 GM \u53ef\u80fd\u8fd8\u672a\u521d\u59cb\u5316\u9636\u6bb5\uff09\uff0c
+        // \u7528\u573a\u666f\u540d\u5224\u65ad\u662f\u5426\u5728\u5ead\u5ba1\u573a\u666f\u3002
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        bool isCourt = sceneName.Contains("Court") || sceneName.Contains("court");
+        Debug.Log("[Court] Start() sceneName='" + sceneName + "' isCourt=" + isCourt);
+        if (!isCourt)
         {
             enabled = false;
             return;
         }
 
         InitializeNPCs();
+        Debug.Log("[Court] NPC\u521d\u59cb\u5316\u5b8c\u6210\uff0c\u542f\u52a8\u5ead\u5ba1\u6d41\u7a0b\u534f\u7a0b...");
         StartCoroutine(CourtFlowCoroutine());
     }
 
@@ -138,53 +151,92 @@ public class CourtController : MonoBehaviour
             CurrentRound = round;
             var speeches = CourtData.RoundSpeeches[round];
 
+            // ── LLM: 在本轮发言前，异步生成 NPC 发言 ──
+            if (LLMBridge.IsEnabled)
+            {
+                _llmSpeechesReady = false;
+                GenerateLLMSpeeches(round, speeches).Forget();
+                yield return new WaitUntil(() => _llmSpeechesReady);
+            }
+
             // 2a. NPC 依次发言
             for (int s = 0; s < speeches.Length; s++)
             {
                 CurrentSpeechIndex = s;
                 SetState(CourtState.NPCSpeech);
 
+                // ── LLM: 替换发言文本 ──
+                string speechText = speeches[s].text;
+                if (LLMBridge.IsEnabled)
+                {
+                    string npcName = NPCs[speeches[s].speaker].name;
+                    string llmText = LLMBridge.GetNPCSpeech(npcName, round);
+                    if (!string.IsNullOrEmpty(llmText)) speechText = llmText;
+                }
+
                 _speechClosed = false;
-                OnNPCSpeech?.Invoke(speeches[s].speaker, speeches[s].text);
+                OnNPCSpeech?.Invoke(speeches[s].speaker, speechText);
                 yield return new WaitUntil(() => _speechClosed);
             }
 
             // 2b. 弹出阿卡那菜单
             SetState(CourtState.AkanaMenu);
             _cardChosen = false;
-            yield return new WaitUntil(() => _cardChosen);
+            _cardSkipped = false;
+            yield return new WaitUntil(() => _cardChosen || _cardSkipped);
 
-            // 2c. 卡牌详情（打出 / 回退循环）
-            bool cardPlayed = false;
-            while (!cardPlayed)
+            // Bug2: 如果玩家跳过出牌，直接进入回合结算
+            if (!_cardSkipped)
             {
-                SetState(CourtState.CardDetail);
-                _cardDetailAction = CardDetailAction.None;
-                OnCardSelected?.Invoke(SelectedCard);
-                yield return new WaitUntil(() => _cardDetailAction != CardDetailAction.None);
-
-                if (_cardDetailAction == CardDetailAction.Back)
+                // 2c. 卡牌详情（打出 / 回退循环）
+                bool cardPlayed = false;
+                while (!cardPlayed)
                 {
-                    SetState(CourtState.AkanaMenu);
-                    _cardChosen = false;
-                    yield return new WaitUntil(() => _cardChosen);
-                    continue;
-                }
-                cardPlayed = true;
-            }
+                    SetState(CourtState.CardDetail);
+                    _cardDetailAction = CardDetailAction.None;
+                    OnCardSelected?.Invoke(SelectedCard);
+                    yield return new WaitUntil(() => _cardDetailAction != CardDetailAction.None);
 
-            // 2d. 选择目标（权杖牌跳过）
-            var effect = CourtData.CardEffects[SelectedCard];
-            if (effect.affectsAll)
-            {
-                ApplyCardEffect(SelectedCard, CourtData.NPCId.皇帝);
-            }
-            else
-            {
-                SetState(CourtState.SelectTarget);
-                _targetChosen = false;
-                yield return new WaitUntil(() => _targetChosen);
-                ApplyCardEffect(SelectedCard, _selectedTarget);
+                    if (_cardDetailAction == CardDetailAction.Back)
+                    {
+                        SetState(CourtState.AkanaMenu);
+                        _cardChosen = false;
+                        _cardSkipped = false;
+                        yield return new WaitUntil(() => _cardChosen || _cardSkipped);
+                        if (_cardSkipped) break;
+                        continue;
+                    }
+                    cardPlayed = true;
+                }
+
+                // 只有真正打出了牌才应用效果
+                if (!_cardSkipped)
+                {
+                    // ── LLM: 出牌后请求证词输入 + 评分 ──
+                    float bonusMultiplier = 1f;
+                    if (LLMBridge.IsEnabled)
+                    {
+                        _argumentInputDone = false;
+                        _argumentBonusMultiplier = 1f;
+                        OnArgumentInputRequested?.Invoke(SelectedCard);
+                        yield return new WaitUntil(() => _argumentInputDone);
+                        bonusMultiplier = _argumentBonusMultiplier;
+                    }
+
+                    // 2d. 选择目标（权杖牌跳过）
+                    var effect = CourtData.CardEffects[SelectedCard];
+                    if (effect.affectsAll)
+                    {
+                        ApplyCardEffect(SelectedCard, CourtData.NPCId.皇帝, bonusMultiplier);
+                    }
+                    else
+                    {
+                        SetState(CourtState.SelectTarget);
+                        _targetChosen = false;
+                        yield return new WaitUntil(() => _targetChosen);
+                        ApplyCardEffect(SelectedCard, _selectedTarget, bonusMultiplier);
+                    }
+                }
             }
 
             // 2e. 回合结算
@@ -222,14 +274,23 @@ public class CourtController : MonoBehaviour
     private bool _rulePanelClosed = false;
     private bool _speechClosed = false;
     private bool _cardChosen = false;
+    private bool _cardSkipped = false;
     private bool _targetChosen = false;
     private CourtData.NPCId _selectedTarget;
+
+    // ── LLM 信号 ──
+    private bool _llmSpeechesReady = false;
+    private bool _argumentInputDone = false;
+    private float _argumentBonusMultiplier = 1f;
 
     private enum CardDetailAction { None, Play, Back }
     private CardDetailAction _cardDetailAction = CardDetailAction.None;
 
     public void NotifyRulePanelClosed()  { _rulePanelClosed = true; }
     public void NotifySpeechClosed()     { _speechClosed = true; }
+
+    /// <summary>Bug2: 玩家选择不出牌，直接进入回合结算。</summary>
+    public void NotifySkipCard()          { _cardSkipped = true; }
 
     public void NotifyCardChosen(AkanaCardId cardId)
     {
@@ -244,6 +305,16 @@ public class CourtController : MonoBehaviour
     {
         _selectedTarget = targetId;
         _targetChosen = true;
+    }
+
+    /// <summary>
+    /// 由 CourtUIController 在证词输入 + 评分完成后调用。
+    /// </summary>
+    /// <param name="bonusMultiplier">1.0 = 无加成，1.2 = 20% 加成</param>
+    public void NotifyArgumentResult(float bonusMultiplier)
+    {
+        _argumentBonusMultiplier = bonusMultiplier;
+        _argumentInputDone = true;
     }
 
     public void RequestShowRulePanel() { OnRulePanelRequested?.Invoke(); }
@@ -282,7 +353,7 @@ public class CourtController : MonoBehaviour
         return count;
     }
 
-    private void ApplyCardEffect(AkanaCardId cardId, CourtData.NPCId targetId)
+    private void ApplyCardEffect(AkanaCardId cardId, CourtData.NPCId targetId, float bonusMultiplier = 1f)
     {
         if (!CourtData.CardEffects.TryGetValue(cardId, out var effect)) return;
 
@@ -290,13 +361,16 @@ public class CourtController : MonoBehaviour
         AkanaManager.Instance?.ConsumeCard(cardId);
 
         // 混乱值高压削弱
-        float multiplier = 1f;
+        float multiplier = bonusMultiplier;
         if (!effect.ignoreChaosPenalty && ChaosManager.Instance != null
             && ChaosManager.Instance.CurrentChaos > CourtData.ChaosHighPressureThreshold)
         {
-            multiplier = CourtData.ChaosWeakenMultiplier;
+            multiplier *= CourtData.ChaosWeakenMultiplier;
             Debug.Log("[Court] 高压削弱生效！乘数 = " + multiplier);
         }
+
+        if (bonusMultiplier > 1f)
+            Debug.Log("[Court] LLM 证词加成生效！乘数 = " + bonusMultiplier);
 
         int emoDelta = Mathf.RoundToInt(effect.emotionalDelta * multiplier);
         int ratDelta = Mathf.RoundToInt(effect.rationalDelta * multiplier);
@@ -323,6 +397,46 @@ public class CourtController : MonoBehaviour
                 OnNPCStatChanged?.Invoke(npc.id, npc.rational, npc.emotional);
                 Debug.Log("[Court] " + effect.cardName + " -> " + npc.name + "：理性 " + npc.rational + ", 感性 " + npc.emotional);
             }
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  LLM 辅助
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 异步生成本轮 NPC 发言并设置 _llmSpeechesReady 标志。
+    /// 失败时静默 fallback 到硬编码发言。
+    /// </summary>
+    private async UniTaskVoid GenerateLLMSpeeches(int round, CourtData.Speech[] speeches)
+    {
+        try
+        {
+            // 收集本轮发言 NPC 的运行时状态
+            var speakers = new List<LLMBridge.NPCStateSnapshot>();
+            foreach (var speech in speeches)
+            {
+                if (NPCs.TryGetValue(speech.speaker, out var npc))
+                {
+                    speakers.Add(new LLMBridge.NPCStateSnapshot
+                    {
+                        name = npc.name,
+                        rational = npc.rational,
+                        emotional = npc.emotional,
+                        isPersuaded = npc.IsPersuaded
+                    });
+                }
+            }
+
+            await LLMBridge.GenerateNPCSpeechesForRound(round, speakers.ToArray());
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[Court] LLM 发言生成异常，回退硬编码: " + e.Message);
+        }
+        finally
+        {
+            _llmSpeechesReady = true;
         }
     }
 }

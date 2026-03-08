@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using LLMModule;
 using LLMModule.Data;
@@ -12,7 +13,8 @@ using UnityEngine;
 ///   - 管理 LLM 模式的启用/禁用状态
 ///   - 持有运行时创建的 LLMTextGenerator
 ///   - 在后台生成阿卡那牌文本并缓存
-///   - 供 AkanaHUDController 查询注入
+///   - 供 AkanaHUDController / CourtUIController 查询注入
+///   - 庭审阶段：生成 NPC 发言、评估玩家证词
 ///
 /// 安全说明：
 ///   API Key 优先级（与 LLMConfig.GetApiKey() 保持一致）：
@@ -21,9 +23,9 @@ using UnityEngine;
 ///   Key 从不以明文形式打印到 Console。
 ///
 /// 设计原则：
-///   - LLM 未启用时对游戏无任何影响（所有查询返回 null）
-///   - 调用方（AkanaHUDController）根据返回值决定是否替换 prefab 原始文本
-///   - 庭审阶段暂未接入，后续可扩展
+///   - LLM 未启用时对游戏无任何影响（所有查询返回 null / -1）
+///   - 调用方根据返回值决定是否替换 prefab 原始文本
+///   - 庭审阶段：NPC 发言 / 玩家证词评分均有 fallback
 /// </summary>
 public static class LLMBridge
 {
@@ -48,6 +50,9 @@ public static class LLMBridge
 
     private static ILLMTextGenerator _generator;
     private static readonly Dictionary<AkanaCardId, string> _cardTexts = new();
+
+    // ── 庭审 NPC 发言缓存：npcName → { round → speechText } ──
+    private static readonly Dictionary<string, Dictionary<int, string>> _npcSpeeches = new();
 
     /// <summary>卡牌面板名前缀 → AkanaCardId 映射</summary>
     private static readonly Dictionary<string, AkanaCardId> _nameToCardId = new()
@@ -98,6 +103,7 @@ public static class LLMBridge
         _generator?.ClearEvidenceCache();
         _generator = null;
         _cardTexts.Clear();
+        _npcSpeeches.Clear();
         HasGeneratedCardTexts = false;
         IsGenerating = false;
         KeySource = "";
@@ -207,6 +213,155 @@ public static class LLMBridge
         finally
         {
             IsGenerating = false;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  庭审 ── NPC 发言
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 传入庭审 NPC 的运行时状态快照，供 LLM 请求使用。
+    /// 由 CourtController 在每轮开始时构建。
+    /// </summary>
+    public struct NPCStateSnapshot
+    {
+        public string name;
+        public int rational;
+        public int emotional;
+        public bool isPersuaded;
+    }
+
+    /// <summary>
+    /// 为指定回合生成 NPC 发言（异步）。
+    /// 结果缓存于 _npcSpeeches，后续通过 GetNPCSpeech() 查询。
+    /// </summary>
+    /// <param name="round">回合索引 (0-based)</param>
+    /// <param name="speakers">本轮需要发言的 NPC 状态快照</param>
+    public static async UniTask GenerateNPCSpeechesForRound(int round, NPCStateSnapshot[] speakers)
+    {
+        if (!IsEnabled || _generator == null) return;
+
+        var chapterConfig = LoadChapterConfig();
+        if (chapterConfig?.trial == null)
+        {
+            Debug.LogWarning("[LLMBridge] 章节配置缺少 trial 节点，跳过 NPC 发言生成。");
+            return;
+        }
+
+        try
+        {
+            // 构建 allNPCs
+            var allNPCs = chapterConfig.trial.npcs
+                .Select(n => n.ToTrialInfo())
+                .ToArray();
+
+            // 构建 speakers
+            var speakerTargets = speakers
+                .Select(s => new NPCSpeechTarget
+                {
+                    name = s.name,
+                    reasonLevel = s.rational,
+                    emotionLevel = s.emotional,
+                    isPersuaded = s.isPersuaded
+                })
+                .ToArray();
+
+            var request = new NPCSpeechRequest
+            {
+                chapter = chapterConfig.chapter,
+                confirmedFacts = chapterConfig.confirmedFacts,
+                topic = chapterConfig.trial.topic,
+                allNPCs = allNPCs,
+                speakers = speakerTargets
+            };
+
+            string style = string.IsNullOrWhiteSpace(Style) ? null : Style;
+            var results = await _generator.GenerateNPCSpeeches(request, style);
+
+            if (results == null) return;
+
+            foreach (var r in results)
+            {
+                if (string.IsNullOrEmpty(r.name)) continue;
+                if (!_npcSpeeches.ContainsKey(r.name))
+                    _npcSpeeches[r.name] = new Dictionary<int, string>();
+                _npcSpeeches[r.name][round] = r.speech;
+                Debug.Log($"[LLMBridge] NPC 发言缓存: {r.name} 第{round}轮 → {r.speech.Substring(0, Mathf.Min(30, r.speech.Length))}...");
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[LLMBridge] 生成 NPC 发言失败 (第{round}轮): {e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 查询已缓存的 NPC 发言。
+    /// 返回 null 表示 LLM 未启用或该 NPC / 该轮无缓存，调用方应使用硬编码 fallback。
+    /// </summary>
+    public static string GetNPCSpeech(string npcName, int round)
+    {
+        if (!IsEnabled) return null;
+        if (_npcSpeeches.TryGetValue(npcName, out var rounds) && rounds.TryGetValue(round, out var text))
+            return text;
+        return null;
+    }
+
+    /// <summary>清除庭审发言缓存（场景切换时调用）。</summary>
+    public static void ClearTrialCache()
+    {
+        _npcSpeeches.Clear();
+        Debug.Log("[LLMBridge] 庭审发言缓存已清除。");
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  庭审 ── 玩家证词评分
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 评估玩家输入的证词，返回 0-10 分。
+    /// 返回 -1 表示评估失败（网络错误、配置缺失等）。
+    /// </summary>
+    /// <param name="argument">玩家输入的证词文本</param>
+    /// <param name="cardId">玩家使用的阿卡那牌</param>
+    public static async UniTask<int> EvaluateArgument(string argument, AkanaCardId cardId)
+    {
+        if (!IsEnabled || _generator == null) return -1;
+
+        var chapterConfig = LoadChapterConfig();
+        if (chapterConfig?.trial == null)
+        {
+            Debug.LogWarning("[LLMBridge] 章节配置缺少 trial 节点，证词评估失败。");
+            return -1;
+        }
+
+        try
+        {
+            // 卡牌名与文本
+            string cardName = CourtData.CardEffects.TryGetValue(cardId, out var effect) ? effect.cardName : cardId.ToString();
+            string cardText = GetCardText(cardId)
+                ?? (CourtData.CardEffects.TryGetValue(cardId, out var eff) ? eff.description : "");
+
+            var request = new ArgumentEvalRequest
+            {
+                chapter = chapterConfig.chapter,
+                confirmedFacts = chapterConfig.confirmedFacts,
+                topic = chapterConfig.trial.topic,
+                argument = argument,
+                cardName = cardName,
+                cardText = cardText
+            };
+
+            string style = string.IsNullOrWhiteSpace(Style) ? null : Style;
+            int score = await _generator.EvaluatePlayerArgument(request, style);
+            Debug.Log($"[LLMBridge] 证词评分: {score}/10  (牌: {cardName})");
+            return Mathf.Clamp(score, 0, 10);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[LLMBridge] 证词评估失败: {e.Message}");
+            return -1;
         }
     }
 

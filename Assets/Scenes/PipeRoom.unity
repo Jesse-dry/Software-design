@@ -5684,6 +5684,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: "\u539F\u76AE \u7AD9_0"
       objectReference: {fileID: 0}
+    - target: {fileID: 7840841170272997505, guid: 4ccdc5e63452fb84dbb214e3f01f8cab, type: 3}
+      propertyPath: minX
+      value: -140
+      objectReference: {fileID: 0}
+    - target: {fileID: 7840841170272997505, guid: 4ccdc5e63452fb84dbb214e3f01f8cab, type: 3}
+      propertyPath: maxX
+      value: -49
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

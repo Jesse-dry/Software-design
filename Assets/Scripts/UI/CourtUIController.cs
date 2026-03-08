@@ -5,6 +5,7 @@ using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 
 /// <summary>
 /// 庭审 UI 控制器（全局持久，跨场景自动注入）。
@@ -51,6 +52,10 @@ public class CourtUIController : MonoBehaviour
     private const float FADE_DURATION = 0.3f;
     private const float PANEL_WIDTH = 900f;
     private const float PANEL_HEIGHT = 550f;
+    private const string CARD_TEXT_NODE_NAME = "文本内容";
+    /// <summary>LLM 证词评分≥此值时给予 20% 加成</summary>
+    private const int ARGUMENT_BONUS_THRESHOLD = 7;
+    private const float ARGUMENT_BONUS_MULTIPLIER = 1.2f;
 
     // ════  UI 引用  ════════════════════════════════════════════════════════
 
@@ -69,6 +74,11 @@ public class CourtUIController : MonoBehaviour
     private readonly Dictionary<CourtData.NPCId, GameObject> _speechPanels = new();
     private readonly Dictionary<CourtData.NPCId, TextMeshProUGUI> _speechTexts = new();
     private readonly Dictionary<CourtData.NPCId, TextMeshProUGUI> _speechNames = new();
+
+    // NPC 多轮发言文本槽：TextForInput(1), TextForInput (2), TextForInput(3)
+    private readonly Dictionary<CourtData.NPCId, TextMeshProUGUI[]> _speechRoundTexts = new();
+    /// <summary>每个 NPC 已发言次数（用于定位 TextForInput 槽位）</summary>
+    private readonly Dictionary<CourtData.NPCId, int> _npcSpeechCount = new();
 
     // 选择目标面板（绑定 prefab）
     private GameObject _selectTargetPanel;
@@ -91,6 +101,9 @@ public class CourtUIController : MonoBehaviour
     private GameObject _victoryPanel;
     private GameObject _defeatPanel;
 
+    // HUD 层 CanvasGroup（用于在模态面板激活时隐藏 HUD）
+    private CanvasGroup _hudCG;
+
     // 运行时创建的 GO，清理时 Destroy
     private readonly List<GameObject> _runtimeCreated = new();
 
@@ -100,30 +113,44 @@ public class CourtUIController : MonoBehaviour
 
     private void OnSceneLoaded(UISceneRoot root)
     {
+        Debug.Log("[CourtUI] >>> OnSceneLoaded called. root=" + (root != null ? root.name : "NULL"));
         Cleanup();
 
-        if (root == null) return;
-        if (GameManager.Instance == null || !GameManager.Instance.IsInCourt()) return;
+        if (root == null) { Debug.LogWarning("[CourtUI] root is null, abort."); return; }
 
+        // 不依赖 GameManager 阶段（Awake 时 GM.Start 尚未执行），改用场景根名判断
+        bool isCourt = root.name.Contains("Court");
+        Debug.Log("[CourtUI] root.name='" + root.name + "' isCourt=" + isCourt);
+        if (!isCourt) return;
         _isCourt = true;
         _hudLayer = root.hudLayer;
         _overlayLayer = root.overlayLayer;
         _modalLayer = root.modalLayer;
 
+        Debug.Log("[CourtUI] root.hudLayer=" + (root.hudLayer != null ? root.hudLayer.name : "NULL")
+            + ", root.overlayLayer=" + (root.overlayLayer != null ? root.overlayLayer.name : "NULL")
+            + ", root.modalLayer=" + (root.modalLayer != null ? root.modalLayer.name : "NULL"));
+
         if (_hudLayer == null)
         {
             var found = root.transform.Find("HUDLayer (1)") ?? root.transform.Find("HUDLayer");
+            Debug.Log("[CourtUI] hudLayer fallback search: " + (found != null ? found.name : "NOT FOUND"));
             if (found != null) _hudLayer = found as RectTransform;
         }
 
         if (_hudLayer == null || _overlayLayer == null || _modalLayer == null)
         {
-            Debug.LogWarning("[CourtUI] \u7f3a\u5c11\u5fc5\u8981\u7684 UI \u5c42\u3002");
+            Debug.LogWarning("[CourtUI] \u7f3a\u5c11\u5fc5\u8981\u7684 UI \u5c42\u3002 hud=" + (_hudLayer != null) + " overlay=" + (_overlayLayer != null) + " modal=" + (_modalLayer != null));
             return;
         }
 
+        // 初始化 HUD 层 CanvasGroup
+        _hudCG = EnsureCG(_hudLayer.gameObject);
+
         // Phase 0: \u5148\u9690\u85cf\u6240\u6709\u5c42\u7ea7\u5b50\u7269\u4f53\uff0c\u7531\u72b6\u6001\u673a\u6309\u9700\u663e\u793a
+        Debug.Log("[CourtUI] Phase 0: HideAllLayerChildren...");
         HideAllLayerChildren();
+        Debug.Log("[CourtUI] Phase 0 done.");
 
         // Phase 1: \u7ed1\u5b9a\u6240\u6709 prefab \u4e2d\u5df2\u6709\u7684\u7f8e\u672f\u9762\u677f
         BindRuleButton();
@@ -136,10 +163,24 @@ public class CourtUIController : MonoBehaviour
         BindVictoryPanel();
         BindDefeatPanel();
 
-        // Phase 3: \u7ed1\u5b9a\u63a7\u5236\u5668\u4e8b\u4ef6
+        // Phase 2: \u7ed1\u5b9a\u63a7\u5236\u5668\u4e8b\u4ef6
+        Debug.Log("[CourtUI] Phase 2: BindCourtController...");
         BindCourtController();
 
-        Debug.Log("[CourtUI] \u5ead\u5ba1 UI \u521d\u59cb\u5316\u5b8c\u6210\u3002");
+        Debug.Log("[CourtUI] \u5ead\u5ba1 UI \u521d\u59cb\u5316\u5b8c\u6210\u3002\u6700\u7ec8 overlayLayer \u5b50\u7269\u4f53\u72b6\u6001:");
+        for (int i = 0; i < _overlayLayer.childCount; i++)
+        {
+            var c = _overlayLayer.GetChild(i).gameObject;
+            var cg2 = c.GetComponent<CanvasGroup>();
+            Debug.Log("[CourtUI]   overlay[" + i + "] '" + c.name + "' active=" + c.activeSelf + " alpha=" + (cg2 != null ? cg2.alpha.ToString("F2") : "NO_CG"));
+        }
+        Debug.Log("[CourtUI] \u6700\u7ec8 modalLayer \u5b50\u7269\u4f53\u72b6\u6001:");
+        for (int i = 0; i < _modalLayer.childCount; i++)
+        {
+            var c = _modalLayer.GetChild(i).gameObject;
+            var cg2 = c.GetComponent<CanvasGroup>();
+            Debug.Log("[CourtUI]   modal[" + i + "] '" + c.name + "' active=" + c.activeSelf + " alpha=" + (cg2 != null ? cg2.alpha.ToString("F2") : "NO_CG"));
+        }
     }
 
     // ════  绑定 Prefab 面板  ════════════════════════════════════════════════════
@@ -187,11 +228,22 @@ public class CourtUIController : MonoBehaviour
         for (int i = 0; i < npcStatNames.Length; i++)
         {
             var child = found.Find(npcStatNames[i]);
-            if (child == null) continue;
+            if (child == null)
+            {
+                Debug.LogWarning("[CourtUI] \u89c4\u5219\u9762\u677f\u4e2d\u672a\u627e\u5230\u5b50\u7269\u4f53: '" + npcStatNames[i] + "'");
+                continue;
+            }
+            // \u5217\u51fa\u5b50\u7269\u4f53\u6240\u6709 TMP \u7ec4\u4ef6
+            var allTmp = child.GetComponentsInChildren<TextMeshProUGUI>(true);
+            Debug.Log("[CourtUI] \u89c4\u5219\u9762\u677f '" + npcStatNames[i] + "' \u4e2d\u627e\u5230 " + allTmp.Length + " \u4e2a TMP:");
+            for (int j = 0; j < allTmp.Length; j++)
+                Debug.Log("[CourtUI]   TMP[" + j + "] go='" + allTmp[j].gameObject.name + "' text='" + allTmp[j].text + "'");
+
             var tmp = child.GetComponent<TextMeshProUGUI>();
             if (tmp == null) tmp = child.GetComponentInChildren<TextMeshProUGUI>(true);
             if (tmp != null) _ruleNPCStatTexts[npcIds[i]] = tmp;
         }
+        Debug.Log("[CourtUI] BindRulePanel: \u6210\u529f\u7ed1\u5b9a " + _ruleNPCStatTexts.Count + " \u4e2a NPC \u5c5e\u6027\u6587\u672c");
 
         // \u67e5\u627e\u6216\u521b\u5efa\u5173\u95ed\u6309\u94ae
         var existingBtn = found.GetComponentInChildren<Button>(true);
@@ -218,6 +270,8 @@ public class CourtUIController : MonoBehaviour
         _speechPanels.Clear();
         _speechTexts.Clear();
         _speechNames.Clear();
+        _speechRoundTexts.Clear();
+        _npcSpeechCount.Clear();
 
         foreach (var p in CourtData.NPCProfiles)
         {
@@ -237,6 +291,18 @@ public class CourtUIController : MonoBehaviour
 
             if (nameTmp != null) _speechNames[p.id] = nameTmp;
             if (speechTmp != null) _speechTexts[p.id] = speechTmp;
+
+            // \u591a\u8f6e\u53d1\u8a00\u6587\u672c\u69fd: TextForInput(1), TextForInput (2), TextForInput(3)
+            var roundTexts = new TextMeshProUGUI[3];
+            roundTexts[0] = FindTMPFuzzy(found, "TextForInput", "1");
+            roundTexts[1] = FindTMPFuzzy(found, "TextForInput", "2");
+            roundTexts[2] = FindTMPFuzzy(found, "TextForInput", "3");
+            _speechRoundTexts[p.id] = roundTexts;
+            _npcSpeechCount[p.id] = 0;
+
+            int boundSlots = 0;
+            for (int i = 0; i < 3; i++) if (roundTexts[i] != null) boundSlots++;
+            Debug.Log($"[CourtUI] {p.name} \u591a\u8f6e\u6587\u672c\u69fd\u7ed1\u5b9a: {boundSlots}/3");
 
             // \u67e5\u627e\u6216\u521b\u5efa\u201c\u7ee7\u7eed\u201d\u6309\u94ae
             var existingBtn = panel.GetComponentInChildren<Button>(true);
@@ -318,20 +384,24 @@ public class CourtUIController : MonoBehaviour
     /// </summary>
     private void HideAllLayerChildren()
     {
+        Debug.Log("[CourtUI] HideAllLayerChildren: overlayLayer childCount=" + _overlayLayer.childCount + ", modalLayer childCount=" + _modalLayer.childCount);
         HideLayerChildren(_overlayLayer);
         HideLayerChildren(_modalLayer);
     }
 
     private void HideLayerChildren(Transform layer)
     {
+        Debug.Log("[CourtUI]   HideLayerChildren(" + layer.name + ") count=" + layer.childCount);
         for (int i = 0; i < layer.childCount; i++)
         {
             var child = layer.GetChild(i).gameObject;
+            bool wasBefore = child.activeSelf;
             var cg = EnsureCG(child);
             cg.alpha = 0f;
             cg.interactable = false;
             cg.blocksRaycasts = false;
             child.SetActive(false);
+            Debug.Log("[CourtUI]     [" + i + "] '" + child.name + "' wasActive=" + wasBefore + " -> SetActive(false)");
         }
     }
 
@@ -400,6 +470,25 @@ public class CourtUIController : MonoBehaviour
             _akanaCardButtons[capturedId] = btn;
             var cardImg = child.GetComponent<Image>();
             if (cardImg != null) _akanaCardImages[capturedId] = cardImg;
+        }
+
+        // Bug2: 绑定跳过/不出牌按钮
+        var skipBtn = FindButton(found, "ButtonToContinue") ?? FindButton(found, "跳过") ?? FindButton(found, "Pass");
+        if (skipBtn != null)
+        {
+            skipBtn.onClick.AddListener(OnAkanaSkip);
+            Debug.Log("[CourtUI] 绑定 akanaMenu 跳过按钮: " + skipBtn.gameObject.name);
+        }
+        else
+        {
+            Debug.LogWarning("[CourtUI] 未找到 akanaMenu 跳过按钮，创建备用。");
+            var skipGO = CreatePanel(found, "SkipBtn_RT", 180, 48, new Vector2(0, -250));
+            SetImage(skipGO, BTN_NORMAL);
+            var newBtn = skipGO.AddComponent<Button>();
+            newBtn.targetGraphic = skipGO.GetComponent<Image>();
+            CreateTMP(skipGO.transform, "不出牌", 22, TEXT_MAIN, TextAlignmentOptions.Center);
+            newBtn.onClick.AddListener(OnAkanaSkip);
+            _runtimeCreated.Add(skipGO);
         }
     }
 
@@ -520,6 +609,10 @@ public class CourtUIController : MonoBehaviour
         cc.OnDefeat += ShowDefeat;
         cc.OnNPCStatChanged += OnNPCStatChanged;
 
+        // LLM 事件
+        cc.OnArgumentInputRequested += ShowArgumentInput;
+        cc.OnArgumentScoreResult += ShowScoreFloat;
+
         Debug.Log("[CourtUI] \u5df2\u7ed1\u5b9a CourtController \u4e8b\u4ef6\u3002");
     }
 
@@ -527,6 +620,18 @@ public class CourtUIController : MonoBehaviour
 
     private void OnCourtStateChanged(CourtState state)
     {
+        // Bug1: 当模态/覆盖面板激活时隐藏 HUD，防止遮挡交互
+        bool hideHud = state == CourtState.NPCSpeech || state == CourtState.AkanaMenu ||
+                       state == CourtState.CardDetail || state == CourtState.SelectTarget ||
+                       state == CourtState.RoundResult || state == CourtState.Victory ||
+                       state == CourtState.Defeat;
+        if (_hudCG != null)
+        {
+            _hudCG.alpha = hideHud ? 0f : 1f;
+            _hudCG.blocksRaycasts = !hideHud;
+            _hudCG.interactable = !hideHud;
+        }
+
         switch (state)
         {
             case CourtState.AkanaMenu:
@@ -551,18 +656,26 @@ public class CourtUIController : MonoBehaviour
     private void RefreshRulePanelStats()
     {
         var cc = CourtController.Instance;
+        Debug.Log("[CourtUI] RefreshRulePanelStats: cc=" + (cc != null ? "OK" : "NULL") + " statTexts=" + _ruleNPCStatTexts.Count);
         if (cc == null) return;
 
         foreach (var p in CourtData.NPCProfiles)
         {
-            if (!_ruleNPCStatTexts.TryGetValue(p.id, out var tmp)) continue;
+            if (!_ruleNPCStatTexts.TryGetValue(p.id, out var tmp))
+            {
+                Debug.LogWarning("[CourtUI]   " + p.name + ": \u65e0\u5bf9\u5e94 TMP");
+                continue;
+            }
             var npc = cc.GetNPC(p.id);
-            if (npc == null) continue;
+            if (npc == null)
+            {
+                Debug.LogWarning("[CourtUI]   " + p.name + ": GetNPC \u8fd4\u56de null");
+                continue;
+            }
 
-            string threshold = p.emotionalThreshold < 0
-                ? "\u7406\u2264" + p.rationalThreshold + " / \u611f\uff1a\u514d\u75ab"
-                : "\u7406\u2264" + p.rationalThreshold + " / \u611f\u2265" + p.emotionalThreshold;
-            tmp.text = FormatNPCStatLine(p.name, npc.rational, npc.emotional, threshold);
+            // Bug4: 只注入 <理性值>/<感性值>
+            tmp.text = npc.rational + "/" + npc.emotional;
+            Debug.Log("[CourtUI]   " + p.name + ": \u5199\u5165 -> '" + tmp.text + "' go='" + tmp.gameObject.name + "'");
         }
     }
 
@@ -593,7 +706,26 @@ public class CourtUIController : MonoBehaviour
     private void ShowSpeech(CourtData.NPCId speaker, string text)
     {
         if (!_speechPanels.TryGetValue(speaker, out var panel)) return;
-        if (_speechTexts.TryGetValue(speaker, out var tmp)) tmp.text = text;
+
+        // 确定本 NPC 的发言槽位（第几次发言 → TextForInput(N)）
+        bool wroteToSlot = false;
+        if (_speechRoundTexts.TryGetValue(speaker, out var roundTexts)
+            && _npcSpeechCount.TryGetValue(speaker, out int count))
+        {
+            int slot = Mathf.Clamp(count, 0, roundTexts.Length - 1);
+            if (roundTexts[slot] != null)
+            {
+                roundTexts[slot].text = text;
+                wroteToSlot = true;
+                Debug.Log($"[CourtUI] {speaker} 第{count + 1}次发言 → TextForInput({slot + 1})");
+            }
+            _npcSpeechCount[speaker] = count + 1;
+        }
+
+        // fallback: 写入旧的 TextForInput（若存在）
+        if (!wroteToSlot && _speechTexts.TryGetValue(speaker, out var tmp))
+            tmp.text = text;
+
         panel.transform.SetAsLastSibling();
         var cg = EnsureCG(panel);
         FadeIn(panel, cg);
@@ -645,11 +777,21 @@ public class CourtUIController : MonoBehaviour
         HideAkanaMenu(() => { cc.NotifyCardChosen(cardId); });
     }
 
+    /// <summary>Bug2: 玩家在阿卡那菜单选择不出牌，直接进入下一回合。</summary>
+    private void OnAkanaSkip()
+    {
+        HideAkanaMenu(() => { CourtController.Instance?.NotifySkipCard(); });
+    }
+
     // ════  卡牌详情  ══════════════════════════════════════════════════════════
 
     private void ShowCardDetail(AkanaCardId cardId)
     {
         if (!_cardDetailPanels.TryGetValue(cardId, out var panel)) return;
+
+        // LLM: 注入模型生成的卡牌文本到 "文本内容" 节点
+        TryInjectLLMCardText(cardId, panel);
+
         panel.transform.SetAsLastSibling();
         FadeIn(panel, _cardDetailCGs[cardId]);
     }
@@ -757,6 +899,8 @@ public class CourtUIController : MonoBehaviour
             cc.OnVictory -= ShowVictory;
             cc.OnDefeat -= ShowDefeat;
             cc.OnNPCStatChanged -= OnNPCStatChanged;
+            cc.OnArgumentInputRequested -= ShowArgumentInput;
+            cc.OnArgumentScoreResult -= ShowScoreFloat;
         }
 
         // \u9500\u6bc1\u8fd0\u884c\u65f6\u521b\u5efa\u7684\u9762\u677f
@@ -768,6 +912,8 @@ public class CourtUIController : MonoBehaviour
         _speechPanels.Clear();
         _speechTexts.Clear();
         _speechNames.Clear();
+        _speechRoundTexts.Clear();
+        _npcSpeechCount.Clear();
         _akanaCardButtons.Clear();
         _akanaCardImages.Clear();
         _cardDetailPanels.Clear();
@@ -777,6 +923,7 @@ public class CourtUIController : MonoBehaviour
         _ruleButton = null;
         _rulePanel = null;
         _rulePanelCG = null;
+        _hudCG = null;
         _akanaMenuPanel = null;
         _akanaMenuCG = null;
         _selectTargetPanel = null;
@@ -795,6 +942,206 @@ public class CourtUIController : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+    // ════  LLM: 卡牌文本注入  ══════════════════════════════════════════════
+
+    /// <summary>
+    /// 将 LLMBridge 缓存的卡牌文本注入到面板中的 "文本内容" 子物体。
+    /// LLM 未启用或文本不可用时静默跳过，不影响原始 prefab 文本。
+    /// </summary>
+    private void TryInjectLLMCardText(AkanaCardId cardId, GameObject panel)
+    {
+        if (!LLMBridge.IsEnabled) return;
+
+        string llmText = LLMBridge.GetCardText(cardId);
+        if (string.IsNullOrEmpty(llmText)) return;
+
+        var textNode = FindInChildren(panel.transform, CARD_TEXT_NODE_NAME);
+        if (textNode == null) return;
+
+        var tmpText = textNode.GetComponent<TMP_Text>();
+        if (tmpText != null)
+        {
+            tmpText.text = llmText;
+            Debug.Log($"[CourtUI] LLM 卡牌文本已注入: {cardId}");
+        }
+    }
+
+    // ════  LLM: 证词输入  ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 出牌后弹出证词输入 UI，玩家提交后异步获取 LLM 评分，
+    /// 完成后通知 CourtController 继续流程。
+    /// 仅在 LLMBridge.IsEnabled 时由 OnArgumentInputRequested 事件触发。
+    /// </summary>
+    private void ShowArgumentInput(AkanaCardId cardId)
+    {
+        // 运行时创建输入面板
+        var bg = CreateFullscreenPanel(_modalLayer, "ArgumentInputBG_RT");
+        _runtimeCreated.Add(bg);
+
+        var panel = CreatePanel(bg.transform, "ArgumentInputPanel",
+            PANEL_WIDTH * 0.8f, PANEL_HEIGHT * 0.55f, Vector2.zero);
+        SetImage(panel, BG_PANEL);
+
+        // 提示文本
+        CreateTMP(panel.transform,
+            "请输入证词，模型将对证词质量评分。\n若高于7分，牌效将获20%加成。",
+            20, TEXT_TITLE, TextAlignmentOptions.Center,
+            anchoredPos: new Vector2(0, 90), sizeDelta: new Vector2(650, 80));
+
+        // 输入框容器
+        var inputGO = new GameObject("ArgumentInput");
+        inputGO.transform.SetParent(panel.transform, false);
+        var inputRect = inputGO.AddComponent<RectTransform>();
+        inputRect.anchorMin = new Vector2(0.5f, 0.5f);
+        inputRect.anchorMax = new Vector2(0.5f, 0.5f);
+        inputRect.sizeDelta = new Vector2(620, 100);
+        inputRect.anchoredPosition = new Vector2(0, 0);
+        var inputBg = inputGO.AddComponent<Image>();
+        inputBg.color = new Color(0.06f, 0.06f, 0.1f, 1f);
+
+        // TextArea 子物体
+        var textAreaGO = new GameObject("Text Area");
+        textAreaGO.transform.SetParent(inputGO.transform, false);
+        var textAreaRect = textAreaGO.AddComponent<RectTransform>();
+        textAreaRect.anchorMin = Vector2.zero;
+        textAreaRect.anchorMax = Vector2.one;
+        textAreaRect.offsetMin = new Vector2(10, 5);
+        textAreaRect.offsetMax = new Vector2(-10, -5);
+
+        // 输入显示文本
+        var inputTextGO = new GameObject("Text");
+        inputTextGO.transform.SetParent(textAreaGO.transform, false);
+        var inputTextRect = inputTextGO.AddComponent<RectTransform>();
+        inputTextRect.anchorMin = Vector2.zero;
+        inputTextRect.anchorMax = Vector2.one;
+        inputTextRect.offsetMin = Vector2.zero;
+        inputTextRect.offsetMax = Vector2.zero;
+        var inputTmp = inputTextGO.AddComponent<TextMeshProUGUI>();
+        inputTmp.fontSize = 18;
+        inputTmp.color = TEXT_MAIN;
+        inputTmp.enableWordWrapping = true;
+        inputTmp.raycastTarget = false;
+        ChineseFontProvider.ApplyFont(inputTmp);
+
+        // Placeholder 文本
+        var placeholderGO = new GameObject("Placeholder");
+        placeholderGO.transform.SetParent(textAreaGO.transform, false);
+        var phRect = placeholderGO.AddComponent<RectTransform>();
+        phRect.anchorMin = Vector2.zero;
+        phRect.anchorMax = Vector2.one;
+        phRect.offsetMin = Vector2.zero;
+        phRect.offsetMax = Vector2.zero;
+        var phTmp = placeholderGO.AddComponent<TextMeshProUGUI>();
+        phTmp.text = "在此输入你的证词论述...";
+        phTmp.fontSize = 18;
+        phTmp.color = TEXT_DIM;
+        phTmp.fontStyle = FontStyles.Italic;
+        phTmp.enableWordWrapping = true;
+        phTmp.raycastTarget = false;
+        ChineseFontProvider.ApplyFont(phTmp);
+
+        // TMP_InputField 组件
+        var inputField = inputGO.AddComponent<TMP_InputField>();
+        inputField.textViewport = textAreaRect;
+        inputField.textComponent = inputTmp;
+        inputField.placeholder = phTmp;
+        inputField.lineType = TMP_InputField.LineType.MultiLineNewline;
+        inputField.characterLimit = 500;
+        inputField.fontAsset = inputTmp.font;
+
+        // 提交按钮
+        var submitGO = CreatePanel(panel.transform, "SubmitBtn", 180, 45, new Vector2(0, -100));
+        SetImage(submitGO, BTN_HIGHLIGHT);
+        var submitBtn = submitGO.AddComponent<Button>();
+        submitBtn.targetGraphic = submitGO.GetComponent<Image>();
+        CreateTMP(submitGO.transform, "提交证词", 22, TEXT_MAIN, TextAlignmentOptions.Center);
+
+        var capturedBg = bg;
+        var capturedCard = cardId;
+        submitBtn.onClick.AddListener(() =>
+        {
+            string argument = inputField.text;
+            if (string.IsNullOrWhiteSpace(argument)) return; // 空文本不提交
+            submitBtn.interactable = false;
+            OnArgumentSubmitted(argument, capturedCard, capturedBg).Forget();
+        });
+
+        bg.transform.SetAsLastSibling();
+        var cg = EnsureCG(bg);
+        FadeIn(bg, cg);
+        inputField.ActivateInputField();
+    }
+
+    /// <summary>
+    /// 证词提交后：关闭输入面板 → 调用 LLM 评分 → 显示浮窗 → 通知 Controller。
+    /// </summary>
+    private async UniTaskVoid OnArgumentSubmitted(string argument, AkanaCardId cardId, GameObject inputBg)
+    {
+        // 关闭输入面板
+        var cg = EnsureCG(inputBg);
+        FadeOut(inputBg, cg);
+
+        // 显示加载提示
+        var loadingGO = CreatePanel(_modalLayer, "LoadingHint_RT", 300, 60, Vector2.zero);
+        SetImage(loadingGO, BG_PANEL);
+        CreateTMP(loadingGO.transform, "评分中...", 22, TEXT_TITLE, TextAlignmentOptions.Center);
+        loadingGO.transform.SetAsLastSibling();
+        var loadingCG = EnsureCG(loadingGO);
+        FadeIn(loadingGO, loadingCG);
+        _runtimeCreated.Add(loadingGO);
+
+        // 异步调用 LLM 评分
+        int score = await LLMBridge.EvaluateArgument(argument, cardId);
+
+        // 关闭加载提示
+        FadeOut(loadingGO, loadingCG);
+
+        // 计算加成
+        bool hasBonus = score >= ARGUMENT_BONUS_THRESHOLD;
+        float multiplier = hasBonus ? ARGUMENT_BONUS_MULTIPLIER : 1f;
+
+        // 显示评分浮窗
+        ShowScoreFloat(score, hasBonus);
+
+        // 等待浮窗显示一会儿再通知 Controller
+        await UniTask.Delay(2200, ignoreTimeScale: true);
+
+        CourtController.Instance?.NotifyArgumentResult(multiplier);
+    }
+
+    // ════  LLM: 评分浮窗  ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 在画面中央偏上显示评分浮窗，2 秒后自动消失。
+    /// </summary>
+    private void ShowScoreFloat(int score, bool hasBonus)
+    {
+        string scoreLabel = score >= 0 ? score.ToString() : "?";
+        string bonusText = hasBonus ? "  ✦ 20%加成!" : "";
+        Color scoreColor = hasBonus ? new Color(0.3f, 0.95f, 0.5f, 1f) : TEXT_MAIN;
+
+        var floatGO = CreatePanel(_modalLayer, "ScoreFloat_RT", 350, 90, new Vector2(0, 200));
+        SetImage(floatGO, new Color(0.1f, 0.1f, 0.15f, 0.92f));
+        CreateTMP(floatGO.transform, "模型评分", 16, TEXT_DIM, TextAlignmentOptions.Center,
+            anchoredPos: new Vector2(0, 20), sizeDelta: new Vector2(300, 24));
+        CreateTMP(floatGO.transform, scoreLabel + " / 10" + bonusText, 30, scoreColor, TextAlignmentOptions.Center,
+            anchoredPos: new Vector2(0, -12), sizeDelta: new Vector2(340, 40));
+
+        floatGO.transform.SetAsLastSibling();
+        var cg = EnsureCG(floatGO);
+        _runtimeCreated.Add(floatGO);
+
+        // 淡入 → 停留 → 上浮淡出
+        FadeIn(floatGO, cg);
+        var rect = floatGO.GetComponent<RectTransform>();
+        DOVirtual.DelayedCall(1.6f, () =>
+        {
+            rect.DOAnchorPosY(rect.anchoredPosition.y + 60f, 0.5f).SetUpdate(true);
+            FadeOut(floatGO, cg);
+        }).SetUpdate(true);
+    }
+
     // ════  UI 工具  ════════════════════════════════════════════════════════════
 
     /// <summary>\u5728\u6307\u5b9a\u5b50\u7269\u4f53\u4e0a\u67e5\u627e TMP \u6587\u672c\u7ec4\u4ef6\u3002</summary>
@@ -808,6 +1155,59 @@ public class CourtUIController : MonoBehaviour
         var input = child.GetComponent<TMP_InputField>();
         if (input != null) return input.textComponent as TextMeshProUGUI;
         return child.GetComponentInChildren<TextMeshProUGUI>(true);
+    }
+
+    /// <summary>
+    /// 模糊查找带编号后缀的 TMP 子物体。
+    /// 处理 Unity 层级中常见的命名不一致：
+    ///   "TextForInput (1)", "TextForInput(1)", "TextForInput 1" 等。
+    /// </summary>
+    private static TextMeshProUGUI FindTMPFuzzy(Transform parent, string baseName, string number)
+    {
+        // 尝试多种可能的命名格式
+        string[] candidates =
+        {
+            $"{baseName} ({number})",   // "TextForInput (1)"
+            $"{baseName}({number})",    // "TextForInput(1)"
+            $"{baseName}{number}",      // "TextForInput1"
+            $"{baseName} {number}",     // "TextForInput 1"
+        };
+
+        foreach (var name in candidates)
+        {
+            var result = FindTMP(parent, name);
+            if (result != null) return result;
+        }
+
+        // 深度搜索：遍历所有子物体，名称包含 baseName 和 number
+        foreach (Transform child in parent.GetComponentsInChildren<Transform>(true))
+        {
+            if (child == parent) continue;
+            if (child.name.Contains(baseName) && child.name.Contains(number))
+            {
+                var tmp = child.GetComponent<TextMeshProUGUI>();
+                if (tmp != null) return tmp;
+                var input = child.GetComponent<TMP_InputField>();
+                if (input != null) return input.textComponent as TextMeshProUGUI;
+                tmp = child.GetComponentInChildren<TextMeshProUGUI>(true);
+                if (tmp != null) return tmp;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>递归查找子物体（按名称精确匹配）。</summary>
+    private static Transform FindInChildren(Transform parent, string name)
+    {
+        if (parent == null) return null;
+        foreach (Transform child in parent)
+        {
+            if (child.name == name) return child;
+            var r = FindInChildren(child, name);
+            if (r != null) return r;
+        }
+        return null;
     }
 
     private static GameObject CreateFullscreenPanel(Transform parent, string name)
@@ -914,8 +1314,9 @@ public class CourtUIController : MonoBehaviour
             });
     }
 
-    private static string FormatNPCStatLine(string name, int rational, int emotional, string threshold)
+    /// <summary>Bug4: 仅输出 理性值/感性值，不带说明文字。</summary>
+    private static string FormatNPCStatLine(int rational, int emotional)
     {
-        return name + "  \u7406\u6027 " + rational + " / \u611f\u6027 " + emotional + "  " + threshold;
+        return rational + "/" + emotional;
     }
 }

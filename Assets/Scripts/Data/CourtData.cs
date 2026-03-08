@@ -75,7 +75,6 @@ public static class CourtData
             new Speech { speaker = NPCId.皇帝, text = "秩序是共识的根基。任何动摇档案体系的行为，都必须被严厉清算。" },
             new Speech { speaker = NPCId.恋人, text = "可是……如果那些档案记录的，不是历史，而是某个人最深的记忆呢？" },
             new Speech { speaker = NPCId.商人, text = "感情归感情，但盗取核心档案会引发整个底层经济的震荡。这笔账不能不算。" },
-            new Speech { speaker = NPCId.正义, text = "判恋人出局只因为她感情用事不可理喻。而对于前档案员的罪行，法律是唯一的准绳。" },
         },
         // ── 第 2 回合 ──
         new[]
@@ -97,7 +96,6 @@ public static class CourtData
             new Speech { speaker = NPCId.皇帝, text = "最终裁决在即。各位陪审，请慎重。" },
             new Speech { speaker = NPCId.恋人, text = "我从一开始就相信他。记忆不应该被审判。" },
             new Speech { speaker = NPCId.商人, text = "好吧，给我看看最后的证据。如果值得，我可以改变立场。" },
-            new Speech { speaker = NPCId.正义, text = "理性之上，正义之下。无论结果如何，我接受。" },
         },
     };
 

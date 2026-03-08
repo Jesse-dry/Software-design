@@ -140,11 +140,16 @@ public class PipePuzzleTimer : MonoBehaviour
             yield break; // FailEffectController 内部处理重载
         }
 
-        // 降级：直接重载
-        yield return new WaitForSeconds(2.0f);
+        // 降级：直接重载（用 WaitForSecondsRealtime 防止 timeScale==0 时永久卡住）
+        yield return new WaitForSecondsRealtime(2.0f);
         if (GameManager.Instance != null)
         {
             GameManager.Instance.ReloadCurrentPhase();
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
         }
     }
 

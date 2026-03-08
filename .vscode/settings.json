@@ -80,6 +80,10 @@
         "/^cd \"D:\\\\Consensus Protocol\\\\new-one\"; python parse_prefab\\.py 2>&1 \\| Select-String \"OTHER ROOT\\|\\^\\[\\^\\\\\\|\\]\\.\\*\\\\\\(GO:\" \\| Select-Object -Last 30$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^cd \"D:\\\\Consensus Protocol\\\\new-one\"; python patch_memory\\.py$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

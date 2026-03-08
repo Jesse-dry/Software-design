@@ -1456,7 +1456,7 @@ PrefabInstance:
       objectReference: {fileID: 890350490}
     - target: {fileID: 5074861262804662568, guid: 1c107934153cb674b98cf4b06f760cf8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -78.11
+      value: -81.11
       objectReference: {fileID: 0}
     - target: {fileID: 5074861262804662568, guid: 1c107934153cb674b98cf4b06f760cf8, type: 3}
       propertyPath: m_LocalPosition.y
@@ -5397,6 +5397,14 @@ PrefabInstance:
       propertyPath: hPromptUI
       value: 
       objectReference: {fileID: 950524695}
+    - target: {fileID: 7840841170272997505, guid: 4ccdc5e63452fb84dbb214e3f01f8cab, type: 3}
+      propertyPath: maxX
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7840841170272997505, guid: 4ccdc5e63452fb84dbb214e3f01f8cab, type: 3}
+      propertyPath: minX
+      value: -105
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

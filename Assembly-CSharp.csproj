@@ -71,6 +71,7 @@
     <Compile Include="Assets\Scripts\Animations\PlayerHide.cs" />
     <Compile Include="Assets\LLMModule\LLMService.cs" />
     <Compile Include="Assets\Scripts\UI\UISceneRoot.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\WaterPipeNode.cs" />
     <Compile Include="Assets\LLMModule\Data\ChapterConfigLoader.cs" />
     <Compile Include="Assets\Scripts\Gameplay\AbyssPortal.cs" />
     <Compile Include="Assets\LLMModule\Example\LLMUsageExample.cs" />

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class GameManager1 : MonoBehaviour
 {
@@ -41,6 +42,32 @@ public class GameManager1 : MonoBehaviour
     {
         mazeEnvironment.SetActive(false);
         playerBall.SetActive(false);
-        Debug.Log("恭喜通关！"); // 这里可以以后换成 Win 按钮
+        Debug.Log("恭喜通关！准备切入法庭！");
+
+        // 开启胜利转场协程
+        StartCoroutine(VictoryAndTransition());
+    }
+
+    private IEnumerator VictoryAndTransition()
+    {
+        // 弹出胜利提示复用 Toast 系统
+        if (UIManager.Instance != null && UIManager.Instance.Toast != null)
+        {
+            // 绿色正面反馈字
+            UIManager.Instance.Toast.Show("破解成功！核心加密日志已下载", colorType: ToastColor.Positive);
+        }
+
+        // 停顿 2 秒
+        yield return new WaitForSeconds(2.0f);
+
+        //  获得重要证据（请根据你们背包/数据系统的实际代码调整！）
+        // 假设你们的数据管家叫 DataManager，大概是这样写：
+        // if (DataManager.Instance != null) { DataManager.Instance.AddEvidence("核心加密日志"); }
+
+        //大管家切入法庭阶段！
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.EnterPhase(GamePhase.Court);
+        }
     }
 }

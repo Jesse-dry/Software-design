@@ -67,35 +67,39 @@ public static class CourtData
 
     public const int TotalRounds = 4;
 
+    /// <summary>
+    /// 4 回合发言顺序：4 位 NPC 轮换，每轮 3 位发言，每位 NPC 共发言 3 次。
+    /// TextForInput(1/2/3) 的文本已烘焙在 prefab 中，此处只定义发言顺序。
+    /// </summary>
     public static readonly Speech[][] RoundSpeeches =
     {
-        // ── 第 1 回合 ──
+        // ── 第 1 回合 ── 皇帝 / 恋人 / 商人
         new[]
         {
-            new Speech { speaker = NPCId.皇帝, text = "秩序是共识的根基。任何动摇档案体系的行为，都必须被严厉清算。" },
-            new Speech { speaker = NPCId.恋人, text = "可是……如果那些档案记录的，不是历史，而是某个人最深的记忆呢？" },
-            new Speech { speaker = NPCId.商人, text = "感情归感情，但盗取核心档案会引发整个底层经济的震荡。这笔账不能不算。" },
+            new Speech { speaker = NPCId.皇帝 },
+            new Speech { speaker = NPCId.恋人 },
+            new Speech { speaker = NPCId.商人 },
         },
-        // ── 第 2 回合 ──
+        // ── 第 2 回合 ── 恋人 / 商人 / 正义
         new[]
         {
-            new Speech { speaker = NPCId.皇帝, text = "他竟敢利用最高权限篡改记录？这已经不止是违规——这是对权力结构的挑衅。" },
-            new Speech { speaker = NPCId.恋人, text = "可他篡改的那段记忆……是关于一场被掩盖的屠杀。他只是想让真相不被抹去。" },
-            new Speech { speaker = NPCId.商人, text = "真相归真相。但如果每个人都自行篡改档案，市场和信用体系将彻底崩塌。" },
+            new Speech { speaker = NPCId.恋人 },
+            new Speech { speaker = NPCId.商人 },
+            new Speech { speaker = NPCId.正义 },
         },
-        // ── 第 3 回合 ──
+        // ── 第 3 回合 ── 商人 / 正义 / 皇帝
         new[]
         {
-            new Speech { speaker = NPCId.皇帝, text = "就算他所言为实，程序正义不可被个人英雄主义取代。" },
-            new Speech { speaker = NPCId.商人, text = "我倒是想知道——谁来赔偿因档案混乱导致的合约纠纷？" },
-            new Speech { speaker = NPCId.正义, text = "我只看事实。如果有证据能证明他的行为拯救了更多人，我会重新考量。" },
+            new Speech { speaker = NPCId.商人 },
+            new Speech { speaker = NPCId.正义 },
+            new Speech { speaker = NPCId.皇帝 },
         },
-        // ── 第 4 回合 ──
+        // ── 第 4 回合 ── 正义 / 皇帝 / 恋人
         new[]
         {
-            new Speech { speaker = NPCId.皇帝, text = "最终裁决在即。各位陪审，请慎重。" },
-            new Speech { speaker = NPCId.恋人, text = "我从一开始就相信他。记忆不应该被审判。" },
-            new Speech { speaker = NPCId.商人, text = "好吧，给我看看最后的证据。如果值得，我可以改变立场。" },
+            new Speech { speaker = NPCId.正义 },
+            new Speech { speaker = NPCId.皇帝 },
+            new Speech { speaker = NPCId.恋人 },
         },
     };
 

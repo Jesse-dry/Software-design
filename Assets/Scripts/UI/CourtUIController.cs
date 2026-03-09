@@ -79,6 +79,8 @@ public class CourtUIController : MonoBehaviour
     private readonly Dictionary<CourtData.NPCId, TextMeshProUGUI[]> _speechRoundTexts = new();
     /// <summary>每个 NPC 已发言次数（用于定位 TextForInput 槽位）</summary>
     private readonly Dictionary<CourtData.NPCId, int> _npcSpeechCount = new();
+    /// <summary>每个 NPC 的 TextForInput 槽位根物体（按需显隐）</summary>
+    private readonly Dictionary<CourtData.NPCId, GameObject[]> _speechSlotRoots = new();
 
     // 选择目标面板（绑定 prefab）
     private GameObject _selectTargetPanel;
@@ -300,8 +302,21 @@ public class CourtUIController : MonoBehaviour
             _speechRoundTexts[p.id] = roundTexts;
             _npcSpeechCount[p.id] = 0;
 
+            // 查找 TextForInput 槽位根节点并初始隐藏（prefab 已提供文本，不需注入）
+            var slotRoots = new GameObject[3];
+            for (int i = 0; i < 3; i++)
+            {
+                var node = FindNodeFuzzy(found, "TextForInput", (i + 1).ToString());
+                if (node != null)
+                {
+                    slotRoots[i] = node.gameObject;
+                    slotRoots[i].SetActive(false);
+                }
+            }
+            _speechSlotRoots[p.id] = slotRoots;
+
             int boundSlots = 0;
-            for (int i = 0; i < 3; i++) if (roundTexts[i] != null) boundSlots++;
+            for (int i = 0; i < 3; i++) if (slotRoots[i] != null) boundSlots++;
             Debug.Log($"[CourtUI] {p.name} \u591a\u8f6e\u6587\u672c\u69fd\u7ed1\u5b9a: {boundSlots}/3");
 
             // \u67e5\u627e\u6216\u521b\u5efa\u201c\u7ee7\u7eed\u201d\u6309\u94ae
@@ -620,18 +635,7 @@ public class CourtUIController : MonoBehaviour
 
     private void OnCourtStateChanged(CourtState state)
     {
-        // Bug1: 当模态/覆盖面板激活时隐藏 HUD，防止遮挡交互
-        bool hideHud = state == CourtState.NPCSpeech || state == CourtState.AkanaMenu ||
-                       state == CourtState.CardDetail || state == CourtState.SelectTarget ||
-                       state == CourtState.RoundResult || state == CourtState.Victory ||
-                       state == CourtState.Defeat;
-        if (_hudCG != null)
-        {
-            _hudCG.alpha = hideHud ? 0f : 1f;
-            _hudCG.blocksRaycasts = !hideHud;
-            _hudCG.interactable = !hideHud;
-        }
-
+        // HUD 常驻可见，不做隐藏（ModalLayer sortOrder 高于 HUD，自然覆盖交互）
         switch (state)
         {
             case CourtState.AkanaMenu:
@@ -707,24 +711,19 @@ public class CourtUIController : MonoBehaviour
     {
         if (!_speechPanels.TryGetValue(speaker, out var panel)) return;
 
-        // 确定本 NPC 的发言槽位（第几次发言 → TextForInput(N)）
-        bool wroteToSlot = false;
-        if (_speechRoundTexts.TryGetValue(speaker, out var roundTexts)
-            && _npcSpeechCount.TryGetValue(speaker, out int count))
+        // 确定本 NPC 第几次发言，仅显示对应 TextForInput 槽位（prefab 已提供文本）
+        if (_npcSpeechCount.TryGetValue(speaker, out int count)
+            && _speechSlotRoots.TryGetValue(speaker, out var slotRoots))
         {
-            int slot = Mathf.Clamp(count, 0, roundTexts.Length - 1);
-            if (roundTexts[slot] != null)
+            int slot = Mathf.Clamp(count, 0, slotRoots.Length - 1);
+            for (int i = 0; i < slotRoots.Length; i++)
             {
-                roundTexts[slot].text = text;
-                wroteToSlot = true;
-                Debug.Log($"[CourtUI] {speaker} 第{count + 1}次发言 → TextForInput({slot + 1})");
+                if (slotRoots[i] != null)
+                    slotRoots[i].SetActive(i == slot);
             }
+            Debug.Log($"[CourtUI] {speaker} 第{count + 1}次发言 → 显示 slot {slot + 1}");
             _npcSpeechCount[speaker] = count + 1;
         }
-
-        // fallback: 写入旧的 TextForInput（若存在）
-        if (!wroteToSlot && _speechTexts.TryGetValue(speaker, out var tmp))
-            tmp.text = text;
 
         panel.transform.SetAsLastSibling();
         var cg = EnsureCG(panel);
@@ -914,6 +913,7 @@ public class CourtUIController : MonoBehaviour
         _speechNames.Clear();
         _speechRoundTexts.Clear();
         _npcSpeechCount.Clear();
+        _speechSlotRoots.Clear();
         _akanaCardButtons.Clear();
         _akanaCardImages.Clear();
         _cardDetailPanels.Clear();
@@ -1194,6 +1194,31 @@ public class CourtUIController : MonoBehaviour
             }
         }
 
+        return null;
+    }
+
+    /// <summary>
+    /// 模糊查找带编号后缀的子节点 Transform（不取 TMP 组件，只定位节点）。
+    /// </summary>
+    private static Transform FindNodeFuzzy(Transform parent, string baseName, string number)
+    {
+        string[] candidates =
+        {
+            $"{baseName} ({number})",
+            $"{baseName}({number})",
+            $"{baseName}{number}",
+            $"{baseName} {number}",
+        };
+        foreach (var name in candidates)
+        {
+            var child = parent.Find(name);
+            if (child != null) return child;
+        }
+        foreach (Transform child in parent)
+        {
+            if (child.name.Contains(baseName) && child.name.Contains(number))
+                return child;
+        }
         return null;
     }
 

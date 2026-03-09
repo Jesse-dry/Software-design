@@ -40,11 +40,21 @@ public class LightDetection : MonoBehaviour
         hasFailed = true;
 
         if (audioSource != null) audioSource.Play();
-        GameObject mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-        if (mainCamera != null)
+
+        // 通过 AudioManager 停止 BGM（不再手动操作 MainCamera AudioSource）
+        if (AudioManager.Instance != null)
         {
-            AudioSource bgmSource = mainCamera.GetComponent<AudioSource>();
-            if (bgmSource != null) bgmSource.Stop(); 
+            AudioManager.Instance.StopBGM();
+        }
+        else
+        {
+            // 降级：直接停 MainCamera 上的 AudioSource
+            GameObject mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+            if (mainCamera != null)
+            {
+                AudioSource bgmSource = mainCamera.GetComponent<AudioSource>();
+                if (bgmSource != null) bgmSource.Stop();
+            }
         }
 
         playercontroller playerMove = playerObj.GetComponent<playercontroller>();

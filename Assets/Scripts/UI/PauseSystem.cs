@@ -75,17 +75,6 @@ public class PauseSystem : MonoBehaviour
 
     private void Update()
     {
-        // 【临时注释】强制放行所有阶段，排查是否卡在 Cutscene 阶段
-        /*
-        if (GameManager.Instance != null && 
-           (GameManager.Instance.CurrentPhase == GamePhase.Boot || 
-            GameManager.Instance.CurrentPhase == GamePhase.MainMenu ||
-            GameManager.Instance.CurrentPhase == GamePhase.Cutscene))
-        {
-            return;
-        }
-        */
-
         bool escPressed = false;
         if (Input.GetKeyDown(KeyCode.Escape)) escPressed = true;
 
@@ -97,18 +86,39 @@ public class PauseSystem : MonoBehaviour
         }
 #endif
 
-        if (escPressed)
-        {
-            // 优先：如果游戏内主菜单（InGameMenuController）正在打开，ESC 关闭它
-            if (InGameMenuController.Instance != null && InGameMenuController.Instance.IsMenuOpen)
-            {
-                Debug.Log("[PauseSystem] ESC → 关闭游戏内主菜单");
-                InGameMenuController.Instance.HideMenu();
-                return;
-            }
+        if (!escPressed) return;
 
-            Debug.Log("[PauseSystem] 按下了 ESC，准备呼叫 TogglePause...");
-            TogglePause();
+        // ════════════════════════════════════════════════════════════
+        //  MainMenu 场景：ESC → 退出游戏
+        //  以「当前激活场景名」为准，避免 GamePhase 尚未切换到 MainMenu
+        //  时（如 startPhase=Boot 且 EnterPhase(MainMenu) 被注释）误判。
+        // ════════════════════════════════════════════════════════════
+        bool isMainMenu =
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu" ||
+            (GameManager.Instance != null && GameManager.Instance.IsInMainMenu());
+
+        if (isMainMenu)
+        {
+            Debug.Log("[PauseSystem] ESC → 主菜单场景，退出游戏");
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+            return;
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  其他场景：ESC → 切换游戏内主菜单（InGameMenuController）
+        // ════════════════════════════════════════════════════════════
+        if (InGameMenuController.Instance != null)
+        {
+            Debug.Log("[PauseSystem] ESC → 切换游戏内主菜单");
+            InGameMenuController.Instance.ToggleMenu();
+        }
+        else
+        {
+            Debug.LogWarning("[PauseSystem] ESC 按下但 InGameMenuController 不可用");
         }
     }
 

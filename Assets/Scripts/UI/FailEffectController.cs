@@ -175,6 +175,10 @@ public class FailEffectController : MonoBehaviour
 
     private IEnumerator FailSequence()
     {
+        // 0. 立即静音所有音频（含场景 AudioSource），再播放失败音效
+        AudioManager.Instance?.StopAllAudio();
+        AudioManager.Instance?.PlayFailSFX();
+
         // 1. 显示模态背景遮罩
         UIManager.Instance?.ShowModalBackground();
 

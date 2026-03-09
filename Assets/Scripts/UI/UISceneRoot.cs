@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 场景 UI 根节点 — 放在每个场景的 UI Canvas 顶层。
@@ -40,6 +41,15 @@ public class UISceneRoot : MonoBehaviour
 
     private void Awake()
     {
+        // ── 强制统一 CanvasScaler 为 Expand 模式 ──
+        // 即使 Prefab 中序列化了旧的 matchWidthOrHeight，也在运行时覆盖为 Expand，
+        // 保证所有场景 UI 等比例放大并自适应屏幕尺寸（不留蓝边）。
+        var scaler = GetComponent<CanvasScaler>();
+        if (scaler != null && scaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize)
+        {
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+        }
+
         if (UIManager.Instance != null)
         {
             UIManager.Instance.RegisterSceneRoot(this);

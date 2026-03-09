@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using DG.Tweening;
 using System;
 
@@ -145,7 +146,7 @@ public class UIManager : MonoBehaviour
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 0.5f;
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // ── Toast 层（全局，跨场景） ──
@@ -168,7 +169,34 @@ public class UIManager : MonoBehaviour
         InterrogationDialogueUI.Initialize(canvasGO.transform);
         CourtUIController.Initialize(canvasGO.transform);
 
+        // 每次场景加载后，强制把该场景内所有 CanvasScaler 修正为 Expand，
+        // 覆盖 Prefab/Scene 文件中可能残留的旧 matchWidthOrHeight 序列化值。
+        SceneManager.sceneLoaded += OnSceneLoaded_PatchCanvasScalers;
+
         Debug.Log("[UIManager] 全局 UI 初始化完成（Transition + Toast + Akana + SelectRole + FailEffect + InterrogationDialogue + Court）。");
+    }
+
+    /// <summary>
+    /// 场景加载完成时，遍历该场景内所有 CanvasScaler，
+    /// 统一修正为 ScaleWithScreenSize + Expand，确保在任意分辨率下等比填满屏幕。
+    /// </summary>
+    private void OnSceneLoaded_PatchCanvasScalers(Scene scene, LoadSceneMode mode)
+    {
+        var scalers = UnityEngine.Object.FindObjectsOfType<CanvasScaler>(true);
+        foreach (var s in scalers)
+        {
+            if (s.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize &&
+                s.screenMatchMode != CanvasScaler.ScreenMatchMode.Expand)
+            {
+                s.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+                Debug.Log($"[UIManager] CanvasScaler 已修正为 Expand: {s.gameObject.name}");
+            }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded_PatchCanvasScalers;
     }
 
     // ══════════════════════════════════════════════════════════════

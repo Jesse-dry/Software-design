@@ -21,6 +21,9 @@ public class GameManager : MonoBehaviour
     // 全局事件，用于通知系统及 UI 阶段变化
     public event Action<GamePhase> OnPhaseChanged;
 
+    /// <summary>庭审前快照，用于失败后“重新庭审”恢复数据。</summary>
+    public CourtDataSnapshot CourtSnapshot { get; private set; }
+
     // 由 Bootstrapper 注入的起始阶段
     private GamePhase _startPhase = GamePhase.Boot;
 
@@ -135,6 +138,7 @@ public class GameManager : MonoBehaviour
 
             case GamePhase.Court:
                 Debug.Log("[GameManager] 离开 Court 阶段");
+                // 庭审快照在离开后不立即清除，由 ResetAllForNewGame / RetryCourt 显式清理
                 break;
             
         }
@@ -189,6 +193,9 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GamePhase.Court:
+                // 进入庭审前捕获快照（失败后可恢复）
+                CourtSnapshot = CourtDataSnapshot.CaptureNow();
+                Debug.Log("[GameManager] 庭审前快照已捕获。");
                 SceneController.Instance?.LoadCourt();
                 break;
 
@@ -246,5 +253,55 @@ public class GameManager : MonoBehaviour
     public bool IsInDecodeGame()
     {
         return CurrentPhase == GamePhase.DecodeGame;
+    }
+
+    // =========================
+    // 庭审结果处理
+    // =========================
+
+    /// <summary>
+    /// 庭审胜利 / 重新游戏 后的全局数据重置。
+    /// 阿卡那牌全部清空，NPC 理性/感性重置（庭审中自动初始化），混乱值恢复默认。
+    /// </summary>
+    public void ResetAllForNewGame()
+    {
+        Debug.Log("[GameManager] 执行全局数据重置...");
+
+        // 1. 阿卡那牌全部清空（未获得）
+        AkanaManager.Instance?.ResetAll();
+
+        // 2. 混乱值恢复默认 (0)
+        ChaosManager.Instance?.ResetChaos();
+
+        // 3. DataManager 数据重置（道具、证据、庭审话题）
+        DataManager.Instance?.ResetAllData();
+
+        // 4. 清除庭审快照
+        CourtSnapshot = null;
+
+        Debug.Log("[GameManager] 全局数据重置完成。");
+    }
+
+    /// <summary>
+    /// 庭审失败后“重新庭审”：恢复快照数据，重新加载 Court 场景。
+    /// </summary>
+    public void RetryCourt()
+    {
+        Debug.Log("[GameManager] 重新庭审：恢复庭审前快照...");
+
+        if (CourtSnapshot != null)
+        {
+            CourtSnapshot.Restore();
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] 无庭审快照，无法恢复，将以当前状态重新开始庭审。");
+        }
+
+        // 重新捕获快照（以便再次失败时还能恢复）
+        CourtSnapshot = CourtDataSnapshot.CaptureNow();
+
+        // 重新加载 Court 场景
+        SceneController.Instance?.LoadCourt();
     }
 }

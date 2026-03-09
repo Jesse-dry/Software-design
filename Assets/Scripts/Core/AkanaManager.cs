@@ -105,6 +105,14 @@ public class AkanaManager : MonoBehaviour
         Debug.Log("[AkanaManager] 所有阿卡那牌数据已重置。");
     }
 
+    /// <summary>
+    /// 静默恢复一张卡牌（快照恢复用，不触发事件和 Toast）。
+    /// </summary>
+    public void RestoreCard(AkanaCardId cardId)
+    {
+        _collectedCards.Add(cardId);
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  辅助
     // ══════════════════════════════════════════════════════════════

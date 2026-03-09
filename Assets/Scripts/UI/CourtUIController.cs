@@ -847,6 +847,11 @@ public class CourtUIController : MonoBehaviour
     private void ShowVictory()
     {
         if (_victoryPanel == null) return;
+
+        // 立即静音所有音频，再播放胜利音效
+        AudioManager.Instance?.StopAllAudio();
+        AudioManager.Instance?.PlayVictorySFX();
+
         _victoryPanel.transform.SetAsLastSibling();
         FadeIn(_victoryPanel, EnsureCG(_victoryPanel));
     }
@@ -854,6 +859,11 @@ public class CourtUIController : MonoBehaviour
     private void ShowDefeat()
     {
         if (_defeatPanel == null) return;
+
+        // 立即静音所有音频，再播放失败音效
+        AudioManager.Instance?.StopAllAudio();
+        AudioManager.Instance?.PlayFailSFX();
+
         _defeatPanel.transform.SetAsLastSibling();
         var cg = EnsureCG(_defeatPanel);
         FadeIn(_defeatPanel, cg);
@@ -865,15 +875,95 @@ public class CourtUIController : MonoBehaviour
             rect.DOShakeRotation(1.2f, new Vector3(0f, 0f, 10f), 35, 90f, true).SetUpdate(true);
         }
 
+        // 抖动结束后弹出选择对话框：重新庭审 / 重新游戏
         DOVirtual.DelayedCall(2f, () =>
         {
-            GameManager.Instance?.EnterPhase(GamePhase.MainMenu);
+            ShowDefeatChoiceDialog();
         }).SetUpdate(true);
     }
 
+    /// <summary>
+    /// 庭审失败后弹出选择对话框。
+    /// 重新庭审：恢复庭审前快照数据，重新加载 Court 场景。
+    /// 重新游戏：重置所有数据，返回主菜单。
+    /// </summary>
+    private void ShowDefeatChoiceDialog()
+    {
+        var modal = UIManager.Instance?.Modal;
+        if (modal == null)
+        {
+            // ModalSystem 不可用时 fallback：直接返回主菜单
+            Debug.LogWarning("[CourtUI] ModalSystem 不可用，直接返回主菜单。");
+            HandleRestartGame();
+            return;
+        }
+
+        modal.ShowConfirm(
+            "庭审失败……\n是否重新进行庭审？\n（选「否」将重置所有数据并返回主菜单）",
+            onYes: HandleRetryCourt,
+            onNo:  HandleRestartGame
+        );
+    }
+
+    /// <summary>重新庭审：恢复快照 → 重新加载 Court 场景。</summary>
+    private void HandleRetryCourt()
+    {
+        // 先隐藏失败面板
+        if (_defeatPanel != null)
+        {
+            var cg = EnsureCG(_defeatPanel);
+            FadeOut(_defeatPanel, cg);
+        }
+
+        var gm = GameManager.Instance;
+        if (gm != null)
+        {
+            gm.RetryCourt();
+        }
+        else
+        {
+            // GameManager 不可用时 fallback：直接重新加载场景
+            Debug.LogWarning("[CourtUI] GameManager 不可用，直接重新加载 Court 场景。");
+            SceneController.Instance?.LoadCourt();
+        }
+    }
+
+    /// <summary>重新游戏：重置所有数据 → 返回主菜单。</summary>
+    private void HandleRestartGame()
+    {
+        // 先隐藏失败面板
+        if (_defeatPanel != null)
+        {
+            var cg = EnsureCG(_defeatPanel);
+            FadeOut(_defeatPanel, cg);
+        }
+
+        var gm = GameManager.Instance;
+        if (gm != null)
+        {
+            gm.ResetAllForNewGame();
+            gm.EnterPhase(GamePhase.MainMenu);
+        }
+        else
+        {
+            Debug.LogWarning("[CourtUI] GameManager 不可用，直接加载主菜单。");
+            SceneController.Instance?.LoadMainMenu();
+        }
+    }
+
+    /// <summary>胜利确认：重置所有数据 → 返回主菜单。</summary>
     private void OnVictoryConfirm()
     {
-        GameManager.Instance?.EnterPhase(GamePhase.MainMenu);
+        var gm = GameManager.Instance;
+        if (gm != null)
+        {
+            gm.ResetAllForNewGame();
+            gm.EnterPhase(GamePhase.MainMenu);
+        }
+        else
+        {
+            SceneController.Instance?.LoadMainMenu();
+        }
     }
 
     // ════  NPC 属性变化  ════════════════════════════════════════════════════════

@@ -176,4 +176,77 @@ public class DataManager : MonoBehaviour
 
         InitializeCourtData();
     }
+
+    // =========================
+    // 快照 Capture / Restore
+    // =========================
+
+    /// <summary>捕获所有道具的收集状态快照。</summary>
+    public List<CourtDataSnapshot.ItemSnapshot> CaptureItemSnapshots()
+    {
+        var list = new List<CourtDataSnapshot.ItemSnapshot>();
+        foreach (var item in allItems)
+        {
+            list.Add(new CourtDataSnapshot.ItemSnapshot
+            {
+                id = item.id,
+                isCollected = item.isCollected,
+                collectTime = item.collectTime,
+            });
+        }
+        return list;
+    }
+
+    /// <summary>捕获所有证据的解锁状态快照。</summary>
+    public List<CourtDataSnapshot.EvidenceSnapshot> CaptureEvidenceSnapshots()
+    {
+        var list = new List<CourtDataSnapshot.EvidenceSnapshot>();
+        foreach (var ev in allEvidence)
+        {
+            list.Add(new CourtDataSnapshot.EvidenceSnapshot
+            {
+                id = ev.id,
+                isUnlocked = ev.isUnlocked,
+            });
+        }
+        return list;
+    }
+
+    /// <summary>从快照恢复道具和证据状态。</summary>
+    public void RestoreFromSnapshot(
+        List<CourtDataSnapshot.ItemSnapshot> itemSnaps,
+        List<CourtDataSnapshot.EvidenceSnapshot> evidenceSnaps)
+    {
+        // 恢复道具
+        if (itemSnaps != null)
+        {
+            foreach (var snap in itemSnaps)
+            {
+                var item = allItems.Find(i => i.id == snap.id);
+                if (item != null)
+                {
+                    item.isCollected = snap.isCollected;
+                    item.collectTime = snap.collectTime;
+                }
+            }
+        }
+
+        // 恢复证据
+        if (evidenceSnaps != null)
+        {
+            foreach (var snap in evidenceSnaps)
+            {
+                var ev = allEvidence.Find(e => e.id == snap.id);
+                if (ev != null)
+                {
+                    ev.isUnlocked = snap.isUnlocked;
+                }
+            }
+        }
+
+        // 重新初始化庭审话题
+        InitializeCourtData();
+
+        Debug.Log("[DataManager] 数据已从快照恢复。");
+    }
 }

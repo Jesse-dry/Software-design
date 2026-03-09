@@ -55,6 +55,34 @@ public class ChaosManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 重置混乱值到 0（用于新游戏 / 庭审胜利后全局重置）。
+    /// </summary>
+    public void ResetChaos()
+    {
+        int old = _currentChaos;
+        _currentChaos = 0;
+        if (old != 0)
+        {
+            Debug.Log("[ChaosManager] 混乱值已重置: " + old + " → 0");
+            OnChaosChanged?.Invoke(_currentChaos, maxChaos);
+        }
+    }
+
+    /// <summary>
+    /// 将混乱值设为指定值（快照恢复用）。
+    /// </summary>
+    public void SetChaos(int value)
+    {
+        int old = _currentChaos;
+        _currentChaos = Mathf.Clamp(value, 0, maxChaos);
+        if (old != _currentChaos)
+        {
+            Debug.Log($"[ChaosManager] 混乱值已恢复: {old} → {_currentChaos}");
+            OnChaosChanged?.Invoke(_currentChaos, maxChaos);
+        }
+    }
+
     private void TriggerChaosBreakdown()
     {
         Debug.LogWarning("[ChaosManager] 混乱值达到上限！游戏可能进入坏结局。");

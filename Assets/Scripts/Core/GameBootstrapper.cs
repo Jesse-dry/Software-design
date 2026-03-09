@@ -56,6 +56,12 @@ public static class GameBootstrapper
         // AkanaManager：阿卡那牌收集管理
         CreateManager<AkanaManager>(root, "AkanaManager");
         
+        // AudioManager：全局音频管理（BGM + SFX）
+        CreateManager<AudioManager>(root, "AudioManager", am =>
+        {
+            am.Initialize();
+        });
+
         // UIManager：UI 统一管理（跨场景持久）
         CreateManager<UIManager>(root, "UIManager", ui =>
         {

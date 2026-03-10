@@ -10,13 +10,13 @@
 ## 🚀 如何运行体验
 
 **选项 A：直接运行打包好的游戏**
-1.进入本仓库的release部分。
-2.找到最新版本（当前为v0.1.0）下载`[consensus protocol.zip]`后运行`[测试版本.exe]`.
+1. 进入本仓库的release部分。
+2. 找到最新版本（当前为v0.1.0）下载`[consensus protocol.zip]`后运行`[测试版本.exe]`。
 
 **选项 B：在 Unity 编辑器中打开（适合查看源码）**
 1. 确保您的电脑已安装 Unity `[6000.3.6f1]`。
-2. 将本仓库克隆或下载到本地。
-3. 在 Unity Hub 中点击 "Add project from disk"，选择本仓库的根目录。
+2. 在release最新版本中下载源码。
+3. 在 Unity Hub 中点击 "Add project from disk"，选择源码所在的根目录。
 4. 打开项目后，进入 `Assets/Scenes` 目录，双击打开 `[初始场景MainMenu]` 场景。
 5. 点击编辑器上方的 Play (▶) 按钮即可试玩。
 

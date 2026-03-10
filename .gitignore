@@ -21,3 +21,5 @@ UserSettings/
 # Unity 构建输出中的大型资源数据文件（超出 GitHub 100MB 限制）
 for_out/**/*.resS
 for_out/**/*.resource
+consensus protocol/**/*.resS
+consensus protocol/**/*.resource

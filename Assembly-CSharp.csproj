@@ -54,11 +54,13 @@
     <Compile Include="Assets\DOTween\Modules\DOTweenModuleUnityVersion.cs" />
     <Compile Include="Assets\Scripts\接水管\LevelJudge.cs" />
     <Compile Include="Assets\Scripts\Gameplay\MemorySceneSetup.cs" />
+    <Compile Include="Assets\Scripts\UI\CourtUIController.cs" />
     <Compile Include="Assets\Scripts\Animations\playercontroller.cs" />
     <Compile Include="Assets\Scripts\Gameplay\MemoryFragmentNode.cs" />
     <Compile Include="Assets\Scripts\迷宫\MovingWall1.cs" />
     <Compile Include="Assets\DOTween\Modules\DOTweenModulePhysics2D.cs" />
     <Compile Include="Assets\Scripts\Gameplay\ItemFloatEffect.cs" />
+    <Compile Include="Assets\Scripts\Core\AudioManager.cs" />
     <Compile Include="Assets\DOTween\Modules\DOTweenModuleUI.cs" />
     <Compile Include="Assets\Scripts\UI\ChaosHUDAdapter.cs" />
     <Compile Include="Assets\LLMModule\Example\TrialUIExample.cs" />
@@ -101,9 +103,11 @@
     <Compile Include="Assets\Scripts\接水管\PipeLogic.cs" />
     <Compile Include="Assets\Scripts\UI\EyeTracker.cs" />
     <Compile Include="Assets\Scripts\Gameplay\CorridorEndTrigger.cs" />
+    <Compile Include="Assets\Scripts\Core\LLMBridge.cs" />
     <Compile Include="Assets\Scripts\迷宫\DecoyCursor.cs" />
     <Compile Include="Assets\Scripts\UI\TransitionSystem.cs" />
     <Compile Include="Assets\Scripts\Gameplay\PlayerInteraction.cs" />
+    <Compile Include="Assets\Scripts\Data\CourtData.cs" />
     <Compile Include="Assets\Scripts\UI\AkanaVictoryHelper.cs" />
     <Compile Include="Assets\_Recovery\OldMainMenu\Scripts\ConsensusTitleEffect.cs" />
     <Compile Include="Assets\Scripts\迷宫\GameManager1.cs" />
@@ -119,6 +123,7 @@
     <Compile Include="Assets\Scripts\Gameplay\CourtState.cs" />
     <Compile Include="Assets\_Recovery\OldMainMenu\Scripts\SceneLoader.cs" />
     <Compile Include="Assets\DOTween\Modules\DOTweenModuleAudio.cs" />
+    <Compile Include="Assets\Scripts\Core\CourtDataSnapshot.cs" />
     <Compile Include="Assets\LLMModule\LLMConfig.cs" />
     <Compile Include="Assets\_Recovery\OldMainMenu\Scripts\ButtonHoverEffect.cs" />
     <Compile Include="Assets\LLMModule\PromptBuilder.cs" />
@@ -177,6 +182,7 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
     <None Include="Assets\DOTween\DOTween.XML" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
+    <None Include="Assets\TextMesh Pro\Glyph Report.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\DOTween\DOTween.dll" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
